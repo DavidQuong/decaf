@@ -26,6 +26,9 @@ Value* convertBoolToInt(Value* value);
 Function* createExternFunction(Type* returnType, char* id, vector<Type*>* parameterTypes);
 Function* createFunctionHeader(Type* returnType, char* id);
 Value* createString(const char* str);
+Value* createGlobalIntVariable(char* id, int initialValue);
+Value* createGlobalBoolVariable(char* id, bool initialValue);
+
 Value* declareVariable(Type* type, char* id);
 Value* assignVariable(char* id, Value* value);
 Value* accessVariable(char* id);

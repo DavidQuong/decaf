@@ -1,2 +1,9 @@
 answer/decaf-codegen
 answer/*.o
+
+globalarray
+globalscalar
+kscope
+*.bc
+*.s
+

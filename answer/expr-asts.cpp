@@ -12,6 +12,24 @@ Value* ExternExprAst::generateCode() {
     return createExternFunction(type, id, paramTypes);
 }
 
+// TODO - Handle arrays
+FieldVarDeclExprAst::FieldVarDeclExprAst(Type* dataType, char* identifier, int quantity) {
+    type = dataType;
+    id = identifier;
+    size = quantity;
+}
+
+Value* FieldVarDeclExprAst::generateCode() {
+    Value* value;
+    if (type == getLLVMType(VALUE_INTTYPE)) {
+        value = createGlobalIntVariable(id, 0);
+    } else {
+        value = createGlobalBoolVariable(id, false);
+    }
+
+    return value;
+}
+
 FunctionExprAst::FunctionExprAst(Type* returnType, char* identifier, vector<pair<Type*,char*>*>* parameterList, deque<ExprAst*>* statementList) {
     type = returnType;
     id = identifier;
@@ -41,15 +59,6 @@ void FunctionExprAst::generateDeferedCode() {
     getBuilder()->SetInsertPoint(block);
     pushSymbolTable();
 
-    /* // Add parameters (Arguments) to function header. */
-    /* for (vector<pair<Type*,char*>*>::iterator it = paramList->begin(); it != paramList->end(); it++) { */
-    /*     pair<Type*,char*>* param = *it; */
-    /*     Type* paramType = param->first; */
-    /*     char* paramId = param->second; */
-    /*     Argument* argument = new Argument(paramType, paramId, function); */
-    /*     storeParameter(paramType, paramId, argument); */
-    /* } */
-    
     for (deque<ExprAst*>::iterator it = stmtList->begin(); it != stmtList->end(); it++) {
         ExprAst* expr = *it;
         expr->generateCode();

@@ -21,8 +21,6 @@
 using namespace llvm;
 using namespace std;
 
-/* extern "C" int yyparse(); */
-/* extern int yylex(); */ 
 extern char* yytext;
 extern int yyleng;
 extern int yylineno;
@@ -33,11 +31,9 @@ char escapeCharacter(char escapedChar);
 void generateExterns(vector<ExternExprAst*>* externList);
 void generateClass(deque<ExprAst*>* exprList);
 
-%}
+static deque<FunctionExprAst*> functionList;
 
-/* %code requires { */
-/*     #include "exprdefs.h" */
-/* } */
+%}
 
 %union {
     class vector<ExternExprAst*>* externList;
@@ -48,7 +44,6 @@ void generateClass(deque<ExprAst*>* exprList);
     class vector<pair<Type*,char*>*>* paramList;
     class pair<Type*,char*>* param;
     class ExprAst* expr;
-    /* class Value* val; */
     int num;
     char* str;
 }
@@ -59,7 +54,7 @@ void generateClass(deque<ExprAst*>* exprList);
 
 %type <externList> externs
 %type <externExpr> extern
-%type <exprList> class declarations preceeding_declaration following_declaration method_declarations method_block variable_declarations variable_declaration variable_ints variable_bools statements method_arguments
+%type <exprList> class declarations preceeding_declaration following_declaration field_ints field_bools method_declarations method_block variable_declarations variable_declaration variable_ints variable_bools statements method_arguments
 
 %type <typeList> extern_parameters
 %type <type> extern_parameter
@@ -67,9 +62,9 @@ void generateClass(deque<ExprAst*>* exprList);
 %type <paramList> method_parameters
 %type <param> method_parameter
 
-%type <expr> method_declaration variable_int variable_bool statement block assignment method_call method_argument expression p1_expression p2_expression p3_expression p4_expression p5_expression root_expression expression_variable constant
+%type <expr> field_int field_bool method_declaration variable_int variable_bool statement block assignment method_call method_argument expression p1_expression p2_expression p3_expression p4_expression p5_expression root_expression expression_variable constant
 
-%type <num> number
+%type <num> field_quantity number
 %type <str> identifier string extern_type method_type type boolean_constant p1_operator p2_operator p3_operator p4_operator p5_operator unary_operator
 
 %%
@@ -114,15 +109,22 @@ class: T_CLASS identifier T_LCB declarations T_RCB                              
 declarations: preceeding_declaration                                                                                                    { $$ = $1; }
     ;
 
-preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration                                                          { /* Reserved */ }
-    | T_BOOLTYPE field_bools T_SEMICOLON following_declaration                                                                          { /* Reserved */ }
-    | field_int_assign following_declaration                                                                                            { /* Reserved */ }
-    | field_bool_assign following_declaration                                                                                           { /* Reserved */ }
+preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration                                                          { deque<ExprAst*>* fieldList = $2;
+                                                                                                                                          deque<ExprAst*>* exprList = $4;
+                                                                                                                                          exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
+                                                                                                                                          $$ = exprList; }
+    | T_BOOLTYPE field_bools T_SEMICOLON following_declaration                                                                          { deque<ExprAst*>* fieldList = $2;
+                                                                                                                                          deque<ExprAst*>* exprList = $4;
+                                                                                                                                          exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
+                                                                                                                                          $$ = exprList; }
+    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { /* Reserved */ }
+    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { /* Reserved */ }
     | T_INTTYPE identifier T_LPAREN method_parameters T_RPAREN method_block method_declarations                                         { Type* type = getLLVMType(VALUE_INTTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
-                                                                                                                                          ExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; }
@@ -131,7 +133,8 @@ preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration  
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
-                                                                                                                                          ExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; }
@@ -139,15 +142,22 @@ preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration  
     | method_declarations                                                                                                               { $$ = $1; }
     ;
 
-following_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration                                                           { /* Reserved */ }
-    | T_BOOLTYPE field_bools T_SEMICOLON following_declaration                                                                          { /* Reserved */ }
-    | field_int_assign following_declaration                                                                                            { /* Reserved */ }
-    | field_bool_assign following_declaration                                                                                           { /* Reserved */ }
+following_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration                                                           { deque<ExprAst*>* fieldList = $2;
+                                                                                                                                          deque<ExprAst*>* exprList = $4;
+                                                                                                                                          exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
+                                                                                                                                          $$ = exprList; }
+    | T_BOOLTYPE field_bools T_SEMICOLON following_declaration                                                                          { deque<ExprAst*>* fieldList = $2;
+                                                                                                                                          deque<ExprAst*>* exprList = $4;
+                                                                                                                                          exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
+                                                                                                                                          $$ = exprList; }
+    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { /* Reserved */ }
+    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { /* Reserved */ }
     | T_INTTYPE identifier T_LPAREN method_parameters T_RPAREN method_block method_declarations                                         { Type* type = getLLVMType(VALUE_INTTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
-                                                                                                                                          ExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr); 
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; } 
@@ -155,36 +165,46 @@ following_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration   
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
-                                                                                                                                          ExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; }
     | method_declarations                                                                                                               { $$ = $1; }
     ;
 
-field_int_assign: T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON                                                                    { /* Reserved */ }
+
+field_ints: field_ints T_COMMA field_int                                                                                                { deque<ExprAst*>* fieldList = $1;
+                                                                                                                                          fieldList->push_back($3);
+                                                                                                                                          $$ = fieldList; }
+    | field_int                                                                                                                         { deque<ExprAst*>* fieldList = new deque<ExprAst*>;
+                                                                                                                                          fieldList->push_back($1); 
+                                                                                                                                          $$ = fieldList; }
     ;
 
-field_ints: field_ints T_COMMA field_int                                                                                                { /* Reserved */ }
-    | field_int                                                                                                                         { /* Reserved */ }
+field_int: identifier field_quantity                                                                                                    { Type* type = getLLVMType(VALUE_INTTYPE);
+                                                                                                                                          char* id = $1;
+                                                                                                                                          int quantity = $2; 
+                                                                                                                                          $$ = new FieldVarDeclExprAst(type, id, quantity); }
     ;
 
-field_int: identifier field_quantity                                                                                                    { /* Reserved */ }
+field_bools: field_bools T_COMMA field_bool                                                                                             { deque<ExprAst*>* fieldList = $1;
+                                                                                                                                          fieldList->push_back($3);
+                                                                                                                                          $$ = fieldList;  }
+    | field_bool                                                                                                                        { deque<ExprAst*>* fieldList = new deque<ExprAst*>;
+                                                                                                                                          fieldList->push_back($1); 
+                                                                                                                                          $$ = fieldList; }
     ;
 
-field_bool_assign: T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON                                                                  { /* Reserved */ }
+field_bool: identifier field_quantity                                                                                                   { Type* type = getLLVMType(VALUE_BOOLTYPE);
+                                                                                                                                          char* id = $1;
+                                                                                                                                          int quantity = $2; 
+                                                                                                                                          $$ = new FieldVarDeclExprAst(type, id, quantity); }
     ;
 
-field_bools: field_bools T_COMMA field_bool                                                                                             { /* Reserved */ }
-    | field_bool                                                                                                                        { /* Reserved */ }
-    ;
 
-field_bool: identifier field_quantity                                                                                                   { /* Reserved */ }
-          ;
-
-
-field_quantity: T_LSB number T_RSB                                                                                                      { /* Reserved */ }
-    | /* Not an array - scalar value */                                                                                                 { /* Reserved */ }
+field_quantity: T_LSB number T_RSB                                                                                                      { $$ = $2; }
+    | /* Not an array - scalar value */                                                                                                 { $$ = 0; }
     ;
 
 
@@ -203,19 +223,21 @@ method_declaration: T_INTTYPE identifier T_LPAREN method_parameters T_RPAREN met
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
                                                                                                                                           FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           $$ = expr; }
-                                                                                                                                          
     | T_BOOLTYPE identifier T_LPAREN method_parameters T_RPAREN method_block                                                            { Type* type = getLLVMType(VALUE_BOOLTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
                                                                                                                                           FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           $$ = expr; }
     | T_VOID identifier T_LPAREN method_parameters T_RPAREN method_block                                                                { Type* type = getLLVMType(VALUE_VOIDTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
                                                                                                                                           deque<ExprAst*>* stmtList = $6;
                                                                                                                                           FunctionExprAst* expr = new FunctionExprAst(type, id, paramList, stmtList);
+                                                                                                                                          functionList.push_back(expr);
                                                                                                                                           $$ = expr; }
     ;
 
@@ -472,9 +494,9 @@ int main() {
     initializeLLVM();
 
     int exitVal = yyparse();
-    /* printf("====================================================================================\n"); */
+    printf("====================================================================================\n");
     getModule()->dump();
-    /* debug(); */
+    debug();
 
     return 0;
     //return (exitVal >= EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
@@ -558,7 +580,7 @@ char escapeCharacter(char escapedChar) {
 /* Generate code for all externs. */
 void generateExterns(vector<ExternExprAst*>* externList) {
     for (vector<ExternExprAst*>::iterator it = externList->begin(); it != externList->end(); it++) {
-        ExternExprAst* expr = *(it);
+        ExternExprAst* expr = *it;
         expr->generateCode();
     }
 }
@@ -566,12 +588,13 @@ void generateExterns(vector<ExternExprAst*>* externList) {
 /* Generate code for the class. */
 void generateClass(deque<ExprAst*>* exprList) {
     for (deque<ExprAst*>::iterator it = exprList->begin(); it != exprList->end(); it++) {
-        ExprAst* expr = *(it);
+        ExprAst* expr = *it;
         expr->generateCode();
     }
 
-    for (deque<ExprAst*>::iterator it = exprList->begin(); it != exprList->end(); it++) {
-        FunctionExprAst* expr = (FunctionExprAst*) *(it);
+    // Generate deferred (function) code.
+    for (deque<FunctionExprAst*>::iterator it = functionList.begin(); it != functionList.end(); it++) {
+        FunctionExprAst* expr = *it;
         expr->generateDeferedCode();
     }
 }
