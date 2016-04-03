@@ -13,6 +13,15 @@ using namespace std;
 
 const char* MODULE_NAME = "Test";
 const char* BRANCH_ENTRY = "entry";
+const char* BRANCH_END = "end";
+const char* BRANCH_LOOP = "loop";
+const char* BRANCH_BODY = "body";
+const char* BRANCH_NEXT = "next";
+const char* BRANCH_SKCTEND = "skctend";
+const char* BRANCH_NOSKCT = "noskct";
+const char* BRANCH_IFSTART = "ifstart";
+const char* BRANCH_IFTRUE = "iftrue";
+const char* BRANCH_IFFALSE = "iffalse";
 
 static Module* codeModule;
 static IRBuilder<>* irBuilder;
@@ -52,8 +61,8 @@ Type* getLLVMType(const char* typeStr) {
     return type;
 }
 
-/* Create a return statement for the provided Type. */
-Value* createReturn(Type* type) {
+/* Create the default return statement for the provided Type. */
+Value* createDefaultReturn(Type* type) {
     Value* returnVal;
     if (type == getLLVMType(VALUE_INTTYPE)) {
         returnVal = getBuilder()->CreateRet(getIntConstant(EXIT_SUCCESS));
@@ -68,6 +77,7 @@ Value* createReturn(Type* type) {
     return returnVal;
 }
 
+
 /* Return the LLVM value representation of the provided integer. */
 Value* getIntConstant(int value) {
     return irBuilder->getInt32(value);
@@ -81,7 +91,7 @@ Value* getBoolConstant(bool value) {
 /* Convert the provided value, which should be of boolean type, to an integer. 
    This works for both constants and variables. */
 Value* convertBoolToInt(Value* value) {
-    return irBuilder->CreateZExt(value, getLLVMType(VALUE_INTTYPE), "zextemp");
+    return irBuilder->CreateZExt(value, getLLVMType(VALUE_INTTYPE), "zexttmp");
 }
 
 
@@ -242,35 +252,78 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
     Value* value;
 
     if (strcmp(op, VALUE_OR) == 0) {
-        value = irBuilder->CreateOr(leftValue, rightValue);
+        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
+        Function* currentFunction = currentBlock->getParent();
+        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
+        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
+        
+        // If left value evaluates to true, then skip checking right part of expression by
+        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
+        irBuilder->CreateCondBr(leftValue, skctendBlock, noskctBlock);
+
+        // Insert code for noskct.
+        irBuilder->SetInsertPoint(noskctBlock);
+        Value* result = irBuilder->CreateOr(leftValue, rightValue, "ortmp");
+        irBuilder->CreateBr(skctendBlock);
+        
+        // Insert code for skctend and generate additional code for or expression
+        irBuilder->SetInsertPoint(skctendBlock);
+        // Create short terminating code.
+        PHINode* node = irBuilder->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
+        node->addIncoming(leftValue, currentBlock);
+        node->addIncoming(result, noskctBlock);
+
+        value = node;
+        
     } else if (strcmp(op, VALUE_AND) == 0) {
-        value = irBuilder->CreateAnd(leftValue, rightValue);
+        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
+        Function* currentFunction = currentBlock->getParent();
+        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
+        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
+    
+        // If left value evaluates to false, then skip checking right part of expression by
+        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
+        irBuilder->CreateCondBr(leftValue, noskctBlock, skctendBlock);
+
+        // Insert code for noskct.
+        irBuilder->SetInsertPoint(noskctBlock);
+        Value* result = irBuilder->CreateAnd(leftValue, rightValue, "andtmp");
+        irBuilder->CreateBr(skctendBlock);
+        
+        // Insert code for skctend and generate additional code for or expression
+        irBuilder->SetInsertPoint(skctendBlock);
+        PHINode* node = irBuilder->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
+        node->addIncoming(leftValue, currentBlock);
+        node->addIncoming(result, noskctBlock);
+
+        value = node;
+        
     } else if (strcmp(op, VALUE_EQ) == 0) {
-        value = irBuilder->CreateICmpEQ(leftValue, rightValue);
+        value = irBuilder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
     } else if (strcmp(op, VALUE_NEQ) == 0) {
-        value = irBuilder->CreateICmpNE(leftValue, rightValue);
+        value = irBuilder->CreateICmpNE(leftValue, rightValue, "neq");
     } else if (strcmp(op, VALUE_LT) == 0) {
-        value = irBuilder->CreateICmpSLT(leftValue, rightValue);
+        value = irBuilder->CreateICmpSLT(leftValue, rightValue, "lttmp");
     } else if (strcmp(op, VALUE_LEQ) == 0) {
-        value = irBuilder->CreateICmpSLE(leftValue, rightValue);
+        value = irBuilder->CreateICmpSLE(leftValue, rightValue, "leqtmp");
     } else if (strcmp(op, VALUE_GT) == 0) {
-        value = irBuilder->CreateICmpSGT(leftValue, rightValue);
+        value = irBuilder->CreateICmpSGT(leftValue, rightValue, "gttmp");
     } else if (strcmp(op, VALUE_GEQ) == 0) {
-        value = irBuilder->CreateICmpSGE(leftValue, rightValue);
+        value = irBuilder->CreateICmpSGE(leftValue, rightValue, "geqtmp");
     } else if (strcmp(op, VALUE_PLUS) == 0) {
         value = irBuilder->CreateAdd(leftValue, rightValue, "addtmp");
     } else if (strcmp(op, VALUE_MINUS) == 0) {
         value = irBuilder->CreateSub(leftValue, rightValue, "subtmp");
     } else if (strcmp(op, VALUE_MULT) == 0) {
-        value = irBuilder->CreateMul(leftValue, rightValue, "multemp");
+        value = irBuilder->CreateMul(leftValue, rightValue, "multmp");
     } else if (strcmp(op, VALUE_DIV) == 0) {
-        value = irBuilder->CreateSDiv(leftValue, rightValue, "divtemp");
+        value = irBuilder->CreateSDiv(leftValue, rightValue, "divtmp");
     } else if (strcmp(op, VALUE_MOD) == 0) {
-        value = irBuilder->CreateSRem(leftValue, rightValue, "modtemp");
+        value = irBuilder->CreateSRem(leftValue, rightValue, "modtmp");
     } else if (strcmp(op, VALUE_RIGHTSHIFT) == 0) {
-        value = irBuilder->CreateAShr(leftValue, rightValue, "rshifttemp");
+        value = irBuilder->CreateAShr(leftValue, rightValue, "rshifttmp");
     } else if (strcmp(op, VALUE_LEFTSHIFT) == 0) {
-        value = irBuilder->CreateShl(leftValue, rightValue, "lshifttemp");
+        value = irBuilder->CreateShl(leftValue, rightValue, "lshifttmp");
     } else {
         throw runtime_error("Invalid binary operation.\n");
     }

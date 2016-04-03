@@ -54,7 +54,7 @@ static deque<FunctionExprAst*> functionList;
 
 %type <externList> externs
 %type <externExpr> extern
-%type <exprList> class declarations preceeding_declaration following_declaration field_ints field_bools method_declarations method_block variable_declarations variable_declaration variable_ints variable_bools statements method_arguments
+%type <exprList> class declarations preceeding_declaration following_declaration field_ints field_bools method_declarations method_block variable_declarations variable_declaration variable_ints variable_bools statements method_arguments assignments
 
 %type <typeList> extern_parameters
 %type <type> extern_parameter
@@ -62,7 +62,7 @@ static deque<FunctionExprAst*> functionList;
 %type <paramList> method_parameters
 %type <param> method_parameter
 
-%type <expr> field_int field_bool method_declaration variable_int variable_bool statement block assignment method_call method_argument expression p1_expression p2_expression p3_expression p4_expression p5_expression root_expression expression_variable constant
+%type <expr> field_int field_bool method_declaration variable_int variable_bool statement block assignment method_call statement_while statement_for statement_if statement_return method_argument expression p1_expression p2_expression p3_expression p4_expression p5_expression root_expression expression_variable constant
 
 %type <num> field_quantity number
 %type <str> identifier string extern_type method_type type boolean_constant p1_operator p2_operator p3_operator p4_operator p5_operator unary_operator
@@ -338,12 +338,12 @@ statements: statements statement                                                
 statement: block                                                                                                                        { $$ = $1; }
     | assignment T_SEMICOLON                                                                                                            { $$ = $1; }
     | method_call T_SEMICOLON                                                                                                           { $$ = $1; }
-    | statement_if                                                                                                                      { /* Reserved */ }
-    | statement_while                                                                                                                   { /* Reserved */ }
-    | statement_for                                                                                                                     { /* Reserved */ }
-    | statement_return T_SEMICOLON                                                                                                      { /* Reserved */ }
-    | T_BREAK T_SEMICOLON                                                                                                               { /* Reserved */ }
-    | T_CONTINUE T_SEMICOLON                                                                                                            { /* Reserved */ }
+    | statement_if                                                                                                                      { $$ = $1; }
+    | statement_while                                                                                                                   { $$ = $1; }
+    | statement_for                                                                                                                     { $$ = $1; }
+    | statement_return T_SEMICOLON                                                                                                      { $$ = $1; }
+    | T_BREAK T_SEMICOLON                                                                                                               { $$ = new BreakExprAst(); }
+    | T_CONTINUE T_SEMICOLON                                                                                                            { $$ = new ContinueExprAst(); }
     ;
 
 block: T_LCB variable_declarations statements T_RCB                                                                                     { deque<ExprAst*>* exprList = new deque<ExprAst*>;
@@ -355,27 +355,40 @@ block: T_LCB variable_declarations statements T_RCB                             
                                                                                                                                           $$ = new BlockExprAst(exprList); }
      ;
 
-statement_if: T_IF T_LPAREN expression T_RPAREN block statement_else                                                                    { /* Reserved */ }
+statement_if: T_IF T_LPAREN expression T_RPAREN block                                                                                   { ExprAst* condExpr = $3;
+                                                                                                                                          ExprAst* blockExpr = $5;
+                                                                                                                                          $$ = new IfBlockExprAst(condExpr, blockExpr); }
+    | T_IF T_LPAREN expression T_RPAREN block T_ELSE block                                                                              { ExprAst* condExpr = $3;
+                                                                                                                                          ExprAst* trueBlockExpr = $5;
+                                                                                                                                          ExprAst* falseBlockExpr = $7;
+                                                                                                                                          $$ = new IfElseBlockExprAst(condExpr, trueBlockExpr, falseBlockExpr); }
     ;
 
-statement_else: T_ELSE block                                                                                                            { /* Reserved */ }
-    | /* No else (optional) */                                                                                                          { /* Reserved */ }
+statement_while: T_WHILE T_LPAREN expression T_RPAREN block                                                                             { ExprAst* condExpr = $3;
+                                                                                                                                          ExprAst* blockExpr = $5;
+                                                                                                                                          $$ = new WhileBlockExprAst(condExpr, blockExpr); }
     ;
 
-statement_while: T_WHILE T_LPAREN expression T_RPAREN block                                                                             { /* Reserved */ }
+statement_for: T_FOR T_LPAREN assignments T_SEMICOLON expression T_SEMICOLON assignments T_RPAREN block                                 { deque<ExprAst*>* initList = $3;
+                                                                                                                                          ExprAst* condExpr = $5; 
+                                                                                                                                          deque<ExprAst*>* updateList = $7;
+                                                                                                                                          ExprAst* blockExpr = $9;
+                                                                                                                                          $$ = new ForBlockExprAst(initList, condExpr, updateList, blockExpr); }
     ;
 
-statement_for: T_FOR T_LPAREN assignments T_SEMICOLON expression T_SEMICOLON assignments T_RPAREN block                                 { /* Reserved */ }
+statement_return: T_RETURN T_LPAREN expression T_RPAREN                                                                                 { ExprAst* expr = $3;
+                                                                                                                                          $$ = new ReturnExprAst(expr); }
+    | T_RETURN T_LPAREN T_RPAREN                                                                                                        { $$ = new ReturnExprAst(NULL); }
+    | T_RETURN                                                                                                                          { $$ = new ReturnExprAst(NULL); }
     ;
 
-statement_return: T_RETURN T_LPAREN expression T_RPAREN                                                                                 { /* Reserved */ }
-    | T_RETURN T_LPAREN T_RPAREN                                                                                                        { /* Reserved */ }
-    | T_RETURN                                                                                                                          { /* Reserved */ }
-    ;
-
-assignments: assignments T_COMMA assignment                                                                                             { /* Reserved */ }
-    | assignment                                                                                                                        { /* Reserved */ } 
-    | /* No assignments */                                                                                                              { /* Reserved */ }
+assignments: assignments T_COMMA assignment                                                                                             { deque<ExprAst*>* exprList = $1; 
+                                                                                                                                          exprList->push_back($3);
+                                                                                                                                          $$ = exprList; }
+    | assignment                                                                                                                        { deque<ExprAst*>* exprList = new deque<ExprAst*>;
+                                                                                                                                          exprList->push_back($1);
+                                                                                                                                          $$ = exprList; } 
+    | /* No assignments */                                                                                                              { $$ = new deque<ExprAst*>; }
 
 assignment: identifier T_ASSIGN expression                                                                                              { char* id = $1; 
                                                                                                                                           ExprAst* resultExpr = $3;

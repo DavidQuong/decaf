@@ -77,6 +77,68 @@ public:
     virtual Value* generateCode();
 };
 
+// ForBlockExprAst - Expression for a for loop.
+class ForBlockExprAst : public ExprAst {
+    deque<ExprAst*>* initList;
+    ExprAst* condExpr;
+    deque<ExprAst*>* updateList;
+    ExprAst* blockExpr;
+public:
+    ForBlockExprAst(deque<ExprAst*>* initAssignList, ExprAst* conditionExpression, deque<ExprAst*>* updateAssignList, ExprAst* blockExpression);
+    virtual Value* generateCode();
+};
+
+// WhileBlockExprAst - Expression for a while loop.
+class WhileBlockExprAst : public ExprAst {
+    ExprAst* condExpr;
+    ExprAst* blockExpr;
+public:
+    WhileBlockExprAst(ExprAst* conditionExpression, ExprAst* blockExpression);
+    virtual Value* generateCode();
+};
+
+// IfBlockExprAst - Expression for an if statement.
+class IfBlockExprAst : public ExprAst {
+    ExprAst* condExpr;
+    ExprAst* blockExpr;
+public:
+    IfBlockExprAst(ExprAst* conditionExpression, ExprAst* blockExpression);
+    virtual Value* generateCode();
+};
+
+// IfElseBlockExprAst - Expression for an if/else statement.
+class IfElseBlockExprAst : public ExprAst {
+    ExprAst* condExpr;
+    ExprAst* trueBlockExpr;
+    ExprAst* falseBlockExpr;
+public:
+    IfElseBlockExprAst(ExprAst* conditionExpression, ExprAst* trueBlockExpression, ExprAst* falseBlockExpression);
+    virtual Value* generateCode();
+};
+
+// ReturnExprAst - Expression for a return statement. The provided expression
+// may be NULL if no return value is provided.
+class ReturnExprAst : public ExprAst {
+    ExprAst* expr;
+public:
+    ReturnExprAst(ExprAst* expression);
+    virtual Value* generateCode();
+};
+
+// BreakExprAst - Expression for a break statement.
+class BreakExprAst : public ExprAst {
+public:
+    BreakExprAst();
+    virtual Value* generateCode();
+};
+
+// ContinueExprAst - Expression for a continue statement.
+class ContinueExprAst : public ExprAst {
+public:
+    ContinueExprAst();
+    virtual Value* generateCode();
+};
+
 // ArrayAssignExprAst - Expression for assigning a value to an index of an array.
 class ArrayAssignExprAst : public ExprAst {
     char* id;

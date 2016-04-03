@@ -2,6 +2,10 @@
 #include "llvm-util.h"
 #include "symbol-table.h"
 #include <cstdio>
+#include <vector>
+
+static vector<BasicBlock*>* continueBlockList = new vector<BasicBlock*>;
+static vector<BasicBlock*>* breakBlockList = new vector<BasicBlock*>;
 
 ExternExprAst::ExternExprAst(Type* returnType, char* identifier, vector<Type*>* parameterTypes) {
     type = returnType;
@@ -80,7 +84,7 @@ void FunctionExprAst::generateDeferedCode() {
         expr->generateCode();
     }
 
-    createReturn(type);
+    createDefaultReturn(type);
     popSymbolTable();
 }
 
@@ -105,6 +109,199 @@ Value* BlockExprAst::generateCode() {
     }
 
     popSymbolTable();
+}
+
+ForBlockExprAst::ForBlockExprAst(deque<ExprAst*>* initAssignList, ExprAst* conditionExpression, deque<ExprAst*>* updateAssignList, ExprAst* blockExpression) {
+    initList = initAssignList;
+    condExpr = conditionExpression;
+    updateList = updateAssignList;
+    blockExpr = blockExpression;
+}
+Value* ForBlockExprAst::generateCode() {
+    if (initList->empty()) {
+        throw runtime_error("For loop variable initialization assignments list is empty.\n");
+    } else if (updateList->empty()) {
+        throw runtime_error("For loop variable update assignments list is empty.\n");
+    }
+
+    Function* currentFunction = getBuilder()->GetInsertBlock()->getParent();
+    BasicBlock* loopBlock = BasicBlock::Create(getGlobalContext(), BRANCH_LOOP, currentFunction);
+    BasicBlock* bodyBlock = BasicBlock::Create(getGlobalContext(), BRANCH_BODY, currentFunction);
+    BasicBlock* nextBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NEXT, currentFunction);
+    BasicBlock* endBlock = BasicBlock::Create(getGlobalContext(), BRANCH_END, currentFunction);
+
+    // Add entry/exit blocks to list for continue/break statements.
+    continueBlockList->push_back(nextBlock);
+    breakBlockList->push_back(endBlock);
+
+    // Generate variable initialization.
+    for (deque<ExprAst*>::iterator it = initList->begin(); it != initList->end(); it++) {
+        ExprAst* expr = *it;
+        expr->generateCode();
+    }
+
+    // Create block and branch to loop.
+    getBuilder()->CreateBr(loopBlock);
+    // Start enty point for loop.
+    getBuilder()->SetInsertPoint(loopBlock);
+    Value* conditionValue = condExpr->generateCode();
+
+    // Create conditional branch to either body or end.
+    getBuilder()->CreateCondBr(conditionValue, bodyBlock, endBlock);
+
+    // Create body block and branch to next.
+    getBuilder()->SetInsertPoint(bodyBlock);
+    blockExpr->generateCode();
+    getBuilder()->CreateBr(nextBlock);
+
+    // Create next block and branch back to loop.
+    getBuilder()->SetInsertPoint(nextBlock);
+    // Generte variable re-assignments.
+    for (deque<ExprAst*>::iterator it = updateList->begin(); it != updateList->end(); it++) {
+        ExprAst* expr = *it;
+        expr->generateCode();
+    }
+    getBuilder()->CreateBr(loopBlock);
+
+    // Create return (end) point.
+    getBuilder()->SetInsertPoint(endBlock); 
+
+    // Remove entry/exit blocks from list.
+    continueBlockList->pop_back();
+    breakBlockList->pop_back();
+}
+
+WhileBlockExprAst::WhileBlockExprAst(ExprAst* conditionExpression, ExprAst* blockExpression) {
+    condExpr = conditionExpression;
+    blockExpr = blockExpression;
+}
+Value* WhileBlockExprAst::generateCode() {
+    Function* currentFunction = getBuilder()->GetInsertBlock()->getParent();
+    BasicBlock* loopBlock = BasicBlock::Create(getGlobalContext(), BRANCH_LOOP, currentFunction);
+    BasicBlock* bodyBlock = BasicBlock::Create(getGlobalContext(), BRANCH_BODY, currentFunction);
+    BasicBlock* endBlock = BasicBlock::Create(getGlobalContext(), BRANCH_END, currentFunction);
+    
+    // Add entry/exit blocks to list for continue/break statements.
+    continueBlockList->push_back(loopBlock);
+    breakBlockList->push_back(endBlock);
+
+    // Create block and branch to loop.
+    getBuilder()->CreateBr(loopBlock);
+    // Start entry point for loop.
+    getBuilder()->SetInsertPoint(loopBlock);
+    Value* conditionValue = condExpr->generateCode();
+
+    // Create conditional branch to either body or end.
+    getBuilder()->CreateCondBr(conditionValue, bodyBlock, endBlock);
+
+    // Insert body block code.
+    getBuilder()->SetInsertPoint(bodyBlock);
+    blockExpr->generateCode();
+    getBuilder()->CreateBr(loopBlock);
+
+    // Create return (end) point.
+    getBuilder()->SetInsertPoint(endBlock);
+
+    // Remove entry/exit blocks from list.
+    continueBlockList->pop_back();
+    breakBlockList->pop_back();
+}
+
+IfBlockExprAst::IfBlockExprAst(ExprAst* conditionExpression, ExprAst* blockExpression) {
+    condExpr = conditionExpression;
+    blockExpr = blockExpression;
+}
+Value* IfBlockExprAst::generateCode() {
+    Function* currentFunction = getBuilder()->GetInsertBlock()->getParent();
+    BasicBlock* ifstartBlock = BasicBlock::Create(getGlobalContext(), BRANCH_IFSTART, currentFunction);
+    BasicBlock* iftrueBlock = BasicBlock::Create(getGlobalContext(), BRANCH_IFTRUE, currentFunction);
+    BasicBlock* endBlock = BasicBlock::Create(getGlobalContext(), BRANCH_END, currentFunction);
+
+    // Branch to ifstart.
+    getBuilder()->CreateBr(ifstartBlock);
+
+    // Start entry point for ifstart block, and
+    // insert conditional expression code.
+    getBuilder()->SetInsertPoint(ifstartBlock);
+    Value* conditionValue = condExpr->generateCode();
+
+    // Create conditional branch to either iftrue or end.
+    getBuilder()->CreateCondBr(conditionValue, iftrueBlock, endBlock);
+
+    // Insert iftrue block code.
+    getBuilder()->SetInsertPoint(iftrueBlock);
+    blockExpr->generateCode();
+    getBuilder()->CreateBr(endBlock);
+
+    // Create return (end) point.
+    getBuilder()->SetInsertPoint(endBlock);
+}
+
+IfElseBlockExprAst::IfElseBlockExprAst(ExprAst* conditionExpression, ExprAst* trueBlockExpression, ExprAst* falseBlockExpression) {
+    condExpr = conditionExpression;
+    trueBlockExpr = trueBlockExpression;
+    falseBlockExpr = falseBlockExpression;
+}
+Value* IfElseBlockExprAst::generateCode() {
+    Function* currentFunction = getBuilder()->GetInsertBlock()->getParent();
+    BasicBlock* ifstartBlock = BasicBlock::Create(getGlobalContext(), BRANCH_IFSTART, currentFunction);
+    BasicBlock* iftrueBlock = BasicBlock::Create(getGlobalContext(), BRANCH_IFTRUE, currentFunction);
+    BasicBlock* iffalseBlock = BasicBlock::Create(getGlobalContext(), BRANCH_IFFALSE, currentFunction);
+    BasicBlock* endBlock = BasicBlock::Create(getGlobalContext(), BRANCH_END, currentFunction);
+
+    // Branch to ifstart.
+    getBuilder()->CreateBr(ifstartBlock);
+    
+    // Start entry point for ifstart block, and
+    // insert conditional expression code.
+    getBuilder()->SetInsertPoint(ifstartBlock);
+    Value* conditionValue = condExpr->generateCode();
+
+    // Create conditional branch to either iftrue or end.
+    getBuilder()->CreateCondBr(conditionValue, iftrueBlock, iffalseBlock);
+
+    // Insert ifstart block code.
+    getBuilder()->SetInsertPoint(iftrueBlock);
+    trueBlockExpr->generateCode();
+    getBuilder()->CreateBr(endBlock);
+
+    // Insert iffalse block code.
+    getBuilder()->SetInsertPoint(iffalseBlock);
+    falseBlockExpr->generateCode();
+    getBuilder()->CreateBr(endBlock);
+
+    // Create return (end) point.
+    getBuilder()->SetInsertPoint(endBlock);
+}
+
+ReturnExprAst::ReturnExprAst(ExprAst* expression) {
+    expr = expression;
+}
+Value* ReturnExprAst::generateCode() {
+    Value* value;
+    if (expr != NULL) {
+        value = expr->generateCode();
+        getBuilder()->CreateRet(value);
+    } else {
+        Type* type = getLLVMType(VALUE_VOIDTYPE);
+        value = createDefaultReturn(type);
+    }
+    
+    return value;
+}
+
+BreakExprAst::BreakExprAst() {
+}
+Value* BreakExprAst::generateCode() {
+    BasicBlock* exitBlock = breakBlockList->back();
+    getBuilder()->CreateBr(exitBlock);
+}
+
+ContinueExprAst::ContinueExprAst() {
+}
+Value* ContinueExprAst::generateCode() {
+    BasicBlock* nextBlock = continueBlockList->back();
+    getBuilder()->CreateBr(nextBlock);
 }
 
 ArrayAssignExprAst::ArrayAssignExprAst(char* identifier, ExprAst* indexExpression,  ExprAst* assignExpression) {
