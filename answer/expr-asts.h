@@ -77,6 +77,16 @@ public:
     virtual Value* generateCode();
 };
 
+// ArrayAssignExprAst - Expression for assigning a value to an index of an array.
+class ArrayAssignExprAst : public ExprAst {
+    char* id;
+    ExprAst* indexExpr;
+    ExprAst* assignExpr;
+public:
+    ArrayAssignExprAst(char* identifier, ExprAst* indexExpression,  ExprAst* assignExpression);
+    virtual Value* generateCode();
+};
+
 // VarDeclExprAst - Expression for variable declarations.
 class VarDeclExprAst : public ExprAst {
     Type* type;
@@ -128,6 +138,15 @@ class VarExprAst : public ExprAst {
     char* id;
 public:
     VarExprAst(char* identifier);
+    virtual Value* generateCode();
+};
+
+// ArrayExprAst - Expression for accessing an index of an array.
+class ArrayExprAst : public ExprAst {
+    char* id;
+    ExprAst* indexExpr;
+public:
+    ArrayExprAst(char* identifier, ExprAst* indexExpression);
     virtual Value* generateCode();
 };
 

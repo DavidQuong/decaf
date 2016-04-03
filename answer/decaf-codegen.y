@@ -94,7 +94,8 @@ extern_parameters: extern_parameters T_COMMA extern_parameter                   
                                                                                                                                           typeList->push_back($3);
                                                                                                                                           $$ = typeList; }
     | extern_parameter                                                                                                                  { vector<Type*>* typeList = new vector<Type*>;
-                                                                                                                                          typeList->push_back($1); }
+                                                                                                                                          typeList->push_back($1);
+                                                                                                                                          $$ = typeList; }
     | /* No extern parameters */                                                                                                        { $$ = new vector<Type*>; }
     ;
 
@@ -224,7 +225,7 @@ field_bool: identifier field_quantity                                           
     ;
 
 field_quantity: T_LSB number T_RSB                                                                                                      { $$ = $2; }
-    | /* Not an array - scalar value */                                                                                                 { $$ = 0; }
+    | /* Not an array - scalar value */                                                                                                 { $$ = VALUE_SCALAR; }
     ;
 
 
@@ -377,11 +378,12 @@ assignments: assignments T_COMMA assignment                                     
     | /* No assignments */                                                                                                              { /* Reserved */ }
 
 assignment: identifier T_ASSIGN expression                                                                                              { char* id = $1; 
-                                                                                                                                          ExprAst* resultAst = $3;
-                                                                                                                                          $$  = new VarAssignExprAst(id, resultAst); }
-                                                                                                                                          
-                                                                                                                                         
-    | identifier T_LSB expression T_RSB T_ASSIGN expression                                                                             { /* Reserved */ }
+                                                                                                                                          ExprAst* resultExpr = $3;
+                                                                                                                                          $$  = new VarAssignExprAst(id, resultExpr); }
+    | identifier T_LSB expression T_RSB T_ASSIGN expression                                                                             { char* id = $1;
+                                                                                                                                          ExprAst* indexExpr = $3;
+                                                                                                                                          ExprAst* resultExpr = $6;
+                                                                                                                                          $$  = new ArrayAssignExprAst(id, indexExpr, resultExpr); }
     ;
 
 method_call: identifier T_LPAREN method_arguments T_RPAREN                                                                              { char* id = $1;
@@ -433,7 +435,9 @@ root_expression: expression_variable                                            
 
 expression_variable: identifier                                                                                                         { char* id = $1;
                                                                                                                                           $$ = new VarExprAst(id); }
-    | identifier T_LSB expression T_RSB                                                                                                 { /* Reserved */ }
+    | identifier T_LSB expression T_RSB                                                                                                 { char* id = $1; 
+                                                                                                                                          ExprAst* indexExpression = $3;
+                                                                                                                                          $$ = new ArrayExprAst(id, indexExpression); }
     ;
 
 identifier: T_ID                                                                                                                        { $$ = strdup(yytext); }

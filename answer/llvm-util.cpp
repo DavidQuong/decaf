@@ -109,13 +109,60 @@ Value* createString(const char* str) {
     return irBuilder->CreateConstGEP2_32(value, 0, 0, "cast");
 }
 
+/* Create an array of the provided type with the provided id and size. */
+Value* createArray(Type* type, char* id, int size) {
+    ArrayType* arrayType = ArrayType::get(type, size);
+    
+    // Initialize all values to zeroes.
+    Constant* zeroInitializer = Constant::getNullValue(arrayType);
+    
+    //Create global variable to array.
+    GlobalVariable* variable = new GlobalVariable(*codeModule, arrayType, false, GlobalValue::ExternalLinkage, zeroInitializer, id);
+    insertSymbol(id, variable);
+
+    return variable;
+}
+
 /* Create a global scalar variable with the provided type and id, and initialize it with the provided value. */
 Value* createGlobalScalar(Type* type, char* id, Constant* value) {
     GlobalVariable* variable = new GlobalVariable(*codeModule, type, false, GlobalValue::ExternalLinkage, value, id);
-    Value* loadValue = irBuilder->CreateLoad(variable);
-    insertSymbol(id, loadValue); 
+    insertSymbol(id, variable); 
 
-    return loadValue;
+    return variable;
+}
+
+/* Assign the provided value to the array with the provided id and index. */
+Value* assignArrayIndex(char* id, Value* index, Value* value) {
+    Value* array = getValue(id);
+    if (array == NULL) {
+        throw runtime_error("Variable " + string(id) + " does not exist.\n");
+    }
+
+    // Get array location.
+    Value* arrayLoc = irBuilder->CreateStructGEP(array, 0, "arrayloc");
+
+    // Get location of array index.
+    Value* arrayIndex = irBuilder->CreateGEP(arrayLoc, index, "arrayindex");
+
+    // Store the provided value at the location of the array index.
+    return irBuilder->CreateStore(value, arrayIndex);
+}
+
+/* Access the array with the provided id at the provided index. */
+Value* accessArrayIndex(char* id, Value* index) {
+    Value* array = getValue(id);
+    if (array == NULL) {
+        throw runtime_error("Variable " + string(id) + " does not exist.\n");
+    }
+
+    // Get array location.
+    Value* arrayLoc = irBuilder->CreateStructGEP(array, 0, "arrayloc");
+
+    // Get location of array index.
+    Value* arrayIndex = irBuilder->CreateGEP(arrayLoc, index, "arrayindex");
+
+    // Store results in temporary variable, and return it for use.
+    return irBuilder->CreateLoad(arrayIndex, "arrayval");
 }
 
 /* Declare a variable with the provided type and id. */

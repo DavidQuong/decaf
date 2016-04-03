@@ -29,5 +29,6 @@ const char* VALUE_VOIDTYPE = "void";
 const char* VALUE_INTTYPE = "int";
 const char* VALUE_BOOLTYPE = "bool";
 const char* VALUE_STRINGTYPE = "string";
+int VALUE_SCALAR = -1;
 
 #endif

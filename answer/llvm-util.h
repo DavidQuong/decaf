@@ -26,7 +26,10 @@ Value* convertBoolToInt(Value* value);
 Function* createExternFunction(Type* returnType, char* id, vector<Type*>* parameterTypes);
 Function* createFunctionHeader(Type* returnType, char* id);
 Value* createString(const char* str);
+Value* createArray(Type* type, char* id, int size);
 Value* createGlobalScalar(Type* type, char* id, Constant* value);
+Value* assignArrayIndex(char* id, Value* index, Value* value);
+Value* accessArrayIndex(char* id, Value* index);
 
 Value* declareVariable(Type* type, char* id);
 Value* assignVariable(char* id, Value* value);

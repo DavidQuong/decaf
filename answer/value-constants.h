@@ -29,5 +29,6 @@ extern const char* VALUE_VOIDTYPE;
 extern const char* VALUE_INTTYPE;
 extern const char* VALUE_BOOLTYPE;
 extern const char* VALUE_STRINGTYPE;
+extern const int VALUE_SCALAR;
 
 #endif

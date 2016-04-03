@@ -12,7 +12,6 @@ Value* ExternExprAst::generateCode() {
     return createExternFunction(type, id, paramTypes);
 }
 
-// TODO - Handle arrays
 FieldVarDeclExprAst::FieldVarDeclExprAst(Type* dataType, char* identifier, int quantity) {
     type = dataType;
     id = identifier;
@@ -21,7 +20,7 @@ FieldVarDeclExprAst::FieldVarDeclExprAst(Type* dataType, char* identifier, int q
 Value* FieldVarDeclExprAst::generateCode() {
     Value* value;
 
-    if (size == 0) { // For scalar variables
+    if (size == VALUE_SCALAR) { // For scalar variables
         if (type == getLLVMType(VALUE_INTTYPE)) { // For integer type
             Constant* constVal = (Constant*) getIntConstant(0);
             value = createGlobalScalar(type, id, constVal);
@@ -29,7 +28,10 @@ Value* FieldVarDeclExprAst::generateCode() {
             Constant* constVal = (Constant*) getBoolConstant(false);
             value = createGlobalScalar(type, id, constVal);
         }
-    } else { // For array variables
+    } else if (0 < size)  { // For array variables
+        value = createArray(type, id, size);
+    } else { // For arrays of size 0;
+        throw runtime_error("Invalid error size, must be at least 1.\n");
     }
 
     return value;
@@ -105,6 +107,18 @@ Value* BlockExprAst::generateCode() {
     popSymbolTable();
 }
 
+ArrayAssignExprAst::ArrayAssignExprAst(char* identifier, ExprAst* indexExpression,  ExprAst* assignExpression) {
+    id = identifier;
+    indexExpr = indexExpression;
+    assignExpr = assignExpression;
+}
+Value* ArrayAssignExprAst::generateCode() {
+    Value* index = indexExpr->generateCode();
+    Value* value = assignExpr->generateCode();
+
+    return assignArrayIndex(id, index, value);
+}
+
 VarDeclExprAst::VarDeclExprAst(Type* dataType, char* identifier) {
     type = dataType;
     id = identifier;
@@ -166,6 +180,16 @@ VarExprAst::VarExprAst(char* identifier) {
 }
 Value* VarExprAst::generateCode() {
     return accessVariable(id);
+}
+
+ArrayExprAst::ArrayExprAst(char* identifier, ExprAst* indexExpression) {
+    id = identifier;
+    indexExpr = indexExpression;
+}
+Value* ArrayExprAst::generateCode() {
+    Value* index = indexExpr->generateCode();
+
+    return accessArrayIndex(id, index);
 }
 
 IntConstExprAst::IntConstExprAst(int value) {
