@@ -109,29 +109,13 @@ Value* createString(const char* str) {
     return irBuilder->CreateConstGEP2_32(value, 0, 0, "cast");
 }
 
-/* Create a global integer (scalar) variable with the provided id and initialize it with the provided integer. */
-Value* createGlobalIntVariable(char* id, int initialValue) {
-    Type* type = getLLVMType(VALUE_INTTYPE);
-    Constant* initVal = (Constant*) getIntConstant(initialValue);
-   
-    GlobalVariable* variable = new GlobalVariable(*codeModule, type, false, GlobalValue::ExternalLinkage, initVal, id);
-    Value* value = irBuilder->CreateLoad(variable);
-    insertSymbol(id, value);
+/* Create a global scalar variable with the provided type and id, and initialize it with the provided value. */
+Value* createGlobalScalar(Type* type, char* id, Constant* value) {
+    GlobalVariable* variable = new GlobalVariable(*codeModule, type, false, GlobalValue::ExternalLinkage, value, id);
+    Value* loadValue = irBuilder->CreateLoad(variable);
+    insertSymbol(id, loadValue); 
 
-    return value;
-}
-
-/* Create a global boolean (scalar) variable with the provided id and initialize it with the provided boolean. */
-Value* createGlobalBoolVariable(char* id, bool initialValue) {
-    Type* type = getLLVMType(VALUE_BOOLTYPE);
-    Constant* initVal = (Constant*) getBoolConstant(false);
-   
-    GlobalVariable* variable = new GlobalVariable(*codeModule, type, false, GlobalValue::ExternalLinkage, initVal, id);
-    Value* value = irBuilder->CreateLoad(variable);
-    insertSymbol(id, value);
-
-    return value;
-
+    return loadValue;
 }
 
 /* Declare a variable with the provided type and id. */

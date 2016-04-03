@@ -25,13 +25,23 @@ public:
     virtual Value* generateCode();
 };
 
-// FieldVarDeclExprAst - Expression for a variable field declarations for both scalars and arrays.
+// FieldVarDeclExprAst - Expression for a declaring a field variable for both scalars and arrays.
 class FieldVarDeclExprAst : public ExprAst {
     Type* type;
     char* id;
     int size;
 public:
     FieldVarDeclExprAst(Type* dataType, char* identifier, int quantity);
+    virtual Value* generateCode();
+};
+
+// FieldDefExprAst - Expression for a declaring and defining a scalar field variable.
+class FieldVarDefExprAst : public ExprAst {
+    Type* type;
+    char* id;
+    Constant* value;
+public:
+    FieldVarDefExprAst(Type* dataType, char* identifier, ExprAst* initialValue);
     virtual Value* generateCode();
 };
 

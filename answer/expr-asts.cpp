@@ -18,16 +18,30 @@ FieldVarDeclExprAst::FieldVarDeclExprAst(Type* dataType, char* identifier, int q
     id = identifier;
     size = quantity;
 }
-
 Value* FieldVarDeclExprAst::generateCode() {
     Value* value;
-    if (type == getLLVMType(VALUE_INTTYPE)) {
-        value = createGlobalIntVariable(id, 0);
-    } else {
-        value = createGlobalBoolVariable(id, false);
+
+    if (size == 0) { // For scalar variables
+        if (type == getLLVMType(VALUE_INTTYPE)) { // For integer type
+            Constant* constVal = (Constant*) getIntConstant(0);
+            value = createGlobalScalar(type, id, constVal);
+        } else { // For boolean type
+            Constant* constVal = (Constant*) getBoolConstant(false);
+            value = createGlobalScalar(type, id, constVal);
+        }
+    } else { // For array variables
     }
 
     return value;
+}
+
+FieldVarDefExprAst::FieldVarDefExprAst(Type* dataType, char* identifier, ExprAst* initialValue) {
+    type = dataType;
+    id = identifier;
+    value = (Constant*) initialValue->generateCode();
+}
+Value* FieldVarDefExprAst::generateCode() {
+   return createGlobalScalar(type, id, value);
 }
 
 FunctionExprAst::FunctionExprAst(Type* returnType, char* identifier, vector<pair<Type*,char*>*>* parameterList, deque<ExprAst*>* statementList) {

@@ -94,8 +94,7 @@ extern_parameters: extern_parameters T_COMMA extern_parameter                   
                                                                                                                                           typeList->push_back($3);
                                                                                                                                           $$ = typeList; }
     | extern_parameter                                                                                                                  { vector<Type*>* typeList = new vector<Type*>;
-                                                                                                                                          typeList->push_back($1);
-                                                                                                                                          $$ = typeList; }
+                                                                                                                                          typeList->push_back($1); }
     | /* No extern parameters */                                                                                                        { $$ = new vector<Type*>; }
     ;
 
@@ -117,8 +116,20 @@ preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration  
                                                                                                                                           deque<ExprAst*>* exprList = $4;
                                                                                                                                           exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
                                                                                                                                           $$ = exprList; }
-    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { /* Reserved */ }
-    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { /* Reserved */ }
+    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { Type* type = getLLVMType(VALUE_INTTYPE);
+                                                                                                                                          char* id = $2;
+                                                                                                                                          ExprAst* initVal = $4;
+                                                                                                                                          ExprAst* expr = new FieldVarDefExprAst(type, id, initVal);
+                                                                                                                                          deque<ExprAst*>* exprList = $6;
+                                                                                                                                          exprList->push_front(expr);
+                                                                                                                                          $$ = exprList; }
+    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { Type* type = getLLVMType(VALUE_BOOLTYPE);
+                                                                                                                                          char* id = $2;
+                                                                                                                                          ExprAst* initVal = $4;
+                                                                                                                                          ExprAst* expr = new FieldVarDefExprAst(type, id, initVal);
+                                                                                                                                          deque<ExprAst*>* exprList = $6;
+                                                                                                                                          exprList->push_front(expr);
+                                                                                                                                          $$ = exprList; }
     | T_INTTYPE identifier T_LPAREN method_parameters T_RPAREN method_block method_declarations                                         { Type* type = getLLVMType(VALUE_INTTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
@@ -128,7 +139,6 @@ preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration  
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; }
-
     | T_BOOLTYPE identifier T_LPAREN method_parameters T_RPAREN method_block method_declarations                                        { Type* type = getLLVMType(VALUE_BOOLTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
@@ -138,7 +148,6 @@ preceeding_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration  
                                                                                                                                           deque<ExprAst*>* exprList = $7;
                                                                                                                                           exprList->push_front(expr);
                                                                                                                                           $$ = exprList; }
-
     | method_declarations                                                                                                               { $$ = $1; }
     ;
 
@@ -150,8 +159,20 @@ following_declaration: T_INTTYPE field_ints T_SEMICOLON following_declaration   
                                                                                                                                           deque<ExprAst*>* exprList = $4;
                                                                                                                                           exprList->insert(exprList->begin(), fieldList->begin(), fieldList->end());
                                                                                                                                           $$ = exprList; }
-    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { /* Reserved */ }
-    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { /* Reserved */ }
+    | T_INTTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                          { Type* type = getLLVMType(VALUE_INTTYPE);
+                                                                                                                                          char* id = $2;
+                                                                                                                                          ExprAst* initVal = $4;
+                                                                                                                                          ExprAst* expr = new FieldVarDefExprAst(type, id, initVal);
+                                                                                                                                          deque<ExprAst*>* exprList = $6;
+                                                                                                                                          exprList->push_front(expr);
+                                                                                                                                          $$ = exprList; }
+    | T_BOOLTYPE identifier T_ASSIGN constant T_SEMICOLON following_declaration                                                         { Type* type = getLLVMType(VALUE_BOOLTYPE);
+                                                                                                                                          char* id = $2;
+                                                                                                                                          ExprAst* initVal = $4;
+                                                                                                                                          ExprAst* expr = new FieldVarDefExprAst(type, id, initVal);
+                                                                                                                                          deque<ExprAst*>* exprList = $6;
+                                                                                                                                          exprList->push_front(expr);
+                                                                                                                                          $$ = exprList; }
     | T_INTTYPE identifier T_LPAREN method_parameters T_RPAREN method_block method_declarations                                         { Type* type = getLLVMType(VALUE_INTTYPE);
                                                                                                                                           char* id = $2;
                                                                                                                                           vector<pair<Type*,char*>*>* paramList = $4;
@@ -201,7 +222,6 @@ field_bool: identifier field_quantity                                           
                                                                                                                                           int quantity = $2; 
                                                                                                                                           $$ = new FieldVarDeclExprAst(type, id, quantity); }
     ;
-
 
 field_quantity: T_LSB number T_RSB                                                                                                      { $$ = $2; }
     | /* Not an array - scalar value */                                                                                                 { $$ = 0; }
