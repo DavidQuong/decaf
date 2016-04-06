@@ -420,10 +420,10 @@ expression: p1_expression                                                       
     ;
 
 p1_expression: p2_expression                                                                                                            { $$ = $1; }
-    | p1_expression p1_operator p2_expression                                                                                           { $$ = new BinaryExprAst($2, $1, $3); }
+    | p1_expression p1_operator p2_expression                                                                                           { $$ = new SkctBinaryExprAst($2, $1, $3); }
     ;
 p2_expression: p3_expression                                                                                                            { $$ = $1; }
-    | p2_expression p2_operator p3_expression                                                                                           { $$ = new BinaryExprAst($2, $1, $3); }
+    | p2_expression p2_operator p3_expression                                                                                           { $$ = new SkctBinaryExprAst($2, $1, $3); }
     ;
 
 p3_expression: p4_expression                                                                                                            { $$ = $1; }

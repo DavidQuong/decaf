@@ -11,10 +11,6 @@
 using namespace llvm;
 using namespace std;
 
-static void validateBothIntType(Value* leftValue, Value* rightValue);
-static void validateBothBoolType(Value* leftValue, Value* rightValue);
-static void validateBothSameType(Value* leftValue, Value* rightValue);
-
 const char* MODULE_NAME = "Test";
 const char* BRANCH_ENTRY = "entry";
 const char* BRANCH_END = "end";
@@ -267,56 +263,7 @@ Value* storeParameter(Type* type, char* id, Argument* parameter) {
 Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
     Value* value;
 
-    if (strcmp(op, VALUE_OR) == 0) {
-        validateBothBoolType(leftValue, rightValue);
-        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
-        Function* currentFunction = currentBlock->getParent();
-        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
-        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
-        
-        // If left value evaluates to true, then skip checking right part of expression by
-        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
-        irBuilder->CreateCondBr(leftValue, skctendBlock, noskctBlock);
-
-        // Insert code for noskct.
-        irBuilder->SetInsertPoint(noskctBlock);
-        Value* result = irBuilder->CreateOr(leftValue, rightValue, "ortmp");
-        irBuilder->CreateBr(skctendBlock);
-        
-        // Insert code for skctend and generate additional code for or expression
-        irBuilder->SetInsertPoint(skctendBlock);
-        // Create short terminating code.
-        PHINode* node = irBuilder->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
-        node->addIncoming(leftValue, currentBlock);
-        node->addIncoming(result, noskctBlock);
-
-        value = node;
-        
-    } else if (strcmp(op, VALUE_AND) == 0) {
-        validateBothBoolType(leftValue, rightValue);
-        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
-        Function* currentFunction = currentBlock->getParent();
-        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
-        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
-    
-        // If left value evaluates to false, then skip checking right part of expression by
-        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
-        irBuilder->CreateCondBr(leftValue, noskctBlock, skctendBlock);
-
-        // Insert code for noskct.
-        irBuilder->SetInsertPoint(noskctBlock);
-        Value* result = irBuilder->CreateAnd(leftValue, rightValue, "andtmp");
-        irBuilder->CreateBr(skctendBlock);
-        
-        // Insert code for skctend and generate additional code for or expression
-        irBuilder->SetInsertPoint(skctendBlock);
-        PHINode* node = irBuilder->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
-        node->addIncoming(leftValue, currentBlock);
-        node->addIncoming(result, noskctBlock);
-
-        value = node;
-        
-    } else if (strcmp(op, VALUE_EQ) == 0) {
+    if (strcmp(op, VALUE_EQ) == 0) {
         validateBothSameType(leftValue, rightValue);
         value = irBuilder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
     } else if (strcmp(op, VALUE_NEQ) == 0) {
@@ -363,7 +310,7 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
 }
 
 // Ensure both values are of int type.
-static void validateBothIntType(Value* leftValue, Value* rightValue) {
+void validateBothIntType(Value* leftValue, Value* rightValue) {
     Type* intType = getLLVMType(VALUE_INTTYPE); 
     Type* leftType = leftValue->getType();
     Type* rightType = rightValue->getType();
@@ -374,7 +321,7 @@ static void validateBothIntType(Value* leftValue, Value* rightValue) {
 }
 
 // Ensure both values are of bool type.
-static void validateBothBoolType(Value* leftValue, Value* rightValue) {
+void validateBothBoolType(Value* leftValue, Value* rightValue) {
     Type* intType = getLLVMType(VALUE_BOOLTYPE);
     Type* leftType = leftValue->getType();
     Type* rightType = rightValue->getType();
@@ -385,7 +332,7 @@ static void validateBothBoolType(Value* leftValue, Value* rightValue) {
 }
 
 // Ensure both values are of the same type.
-static void validateBothSameType(Value* leftValue, Value* rightValue) {
+void validateBothSameType(Value* leftValue, Value* rightValue) {
     Type* leftType = leftValue->getType();
     Type* rightType = rightValue->getType();
     

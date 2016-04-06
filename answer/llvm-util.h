@@ -35,7 +35,6 @@ Value* getBoolConstant(bool value);
 Value* convertBoolToInt(Value* value);
 Function* createExternFunction(Type* returnType, char* id, vector<Type*>* parameterTypes);
 Function* createFunctionHeader(Type* returnType, char* id);
-
 Value* createString(const char* str);
 Value* createArray(Type* type, char* id, int size);
 Value* createGlobalScalar(Type* type, char* id, Constant* value);
@@ -47,6 +46,9 @@ Value* accessVariable(char* id);
 Value* callFunction(char* id, vector<Value*>* args);
 Value* storeParameter(Type* type, char* id, Argument* parameter);
 Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue);
+void validateBothIntType(Value* leftValue, Value* rightValue);
+void validateBothBoolType(Value* leftValue, Value* rightValue);
+void validateBothSameType(Value* leftValue, Value* rightValue);
 Value* computeUnaryExpression(char* op, Value* value);
 
 #endif

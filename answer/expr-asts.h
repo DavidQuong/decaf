@@ -167,6 +167,16 @@ public:
     virtual Value* generateCode();
 };
 
+// SkctExprAst - Expression for short-circuited binary expressions.
+class SkctBinaryExprAst : public ExprAst {
+    char* op;
+    ExprAst* lExpr;
+    ExprAst* rExpr;
+public:
+    SkctBinaryExprAst(char* operation, ExprAst* leftExpression, ExprAst* rightExpression);
+    virtual Value* generateCode();
+};
+
 // BinaryExprAst - Expression for binary expressions.
 class BinaryExprAst : public ExprAst {
     char* op;

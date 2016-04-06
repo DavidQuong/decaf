@@ -340,6 +340,72 @@ Value* VarAssignExprAst::generateCode() {
     return assignVariable(id, value);
 }
 
+SkctBinaryExprAst::SkctBinaryExprAst(char* operation, ExprAst* leftExpression, ExprAst* rightExpression) {
+    op = operation;
+    lExpr = leftExpression;
+    rExpr = rightExpression;
+}
+Value* SkctBinaryExprAst::generateCode() {
+    Value* lValue = lExpr->generateCode();
+
+    Value* value;
+    if (strcmp(op, VALUE_OR) == 0) {
+        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
+        Function* currentFunction = currentBlock->getParent();
+        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
+        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
+        
+        // If left value evaluates to true, then skip checking right part of expression by
+        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
+        getBuilder()->CreateCondBr(lValue, skctendBlock, noskctBlock);
+
+        // Insert code for noskct, evaluate right expression.
+        getBuilder()->SetInsertPoint(noskctBlock);
+        Value* rValue = rExpr->generateCode();
+        Value* result = getBuilder()->CreateOr(lValue, rValue, "ortmp");
+        getBuilder()->CreateBr(skctendBlock);
+        
+        // Insert code for skctend and generate additional code for or expression
+        getBuilder()->SetInsertPoint(skctendBlock);
+        // Create short terminating code.
+        PHINode* node = getBuilder()->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
+        node->addIncoming(lValue, currentBlock);
+        node->addIncoming(result, noskctBlock);
+
+        value = node;
+        validateBothBoolType(lValue, rValue);
+    } else if (strcmp(op, VALUE_AND) == 0) {
+        BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
+        Function* currentFunction = currentBlock->getParent();
+        BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
+        BasicBlock* skctendBlock = BasicBlock::Create(getGlobalContext(), BRANCH_SKCTEND, currentFunction);
+    
+        // If left value evaluates to false, then skip checking right part of expression by
+        // branching to skctend (short circuit), otherwise branch to noskct (no short circuit).
+        getBuilder()->CreateCondBr(lValue, noskctBlock, skctendBlock);
+
+        // Insert code for noskct, evaluate right expression.
+        getBuilder()->SetInsertPoint(noskctBlock);
+        Value* rValue = rExpr->generateCode();
+        Value* result = getBuilder()->CreateAnd(lValue, rValue, "andtmp");
+        getBuilder()->CreateBr(skctendBlock);
+        
+        // Insert code for skctend and generate additional code for or expression
+        getBuilder()->SetInsertPoint(skctendBlock);
+        // Create short terminating code.
+        PHINode* node = getBuilder()->CreatePHI(getLLVMType(VALUE_BOOLTYPE), 2, "phival");
+        node->addIncoming(lValue, currentBlock);
+        node->addIncoming(result, noskctBlock);
+
+        value = node;
+        validateBothBoolType(lValue, rValue);
+    } else {
+        throw runtime_error("Invalid binary operation.\n");
+    }
+
+    return value;
+}
+
 BinaryExprAst::BinaryExprAst(char* operation, ExprAst* leftExpression, ExprAst* rightExpression) {
     op = operation;
     lExpr = leftExpression;
@@ -351,6 +417,8 @@ Value* BinaryExprAst::generateCode() {
 
     return computeBinaryExpression(op, lValue, rValue);
 }
+
+
 
 UnaryExprAst::UnaryExprAst(char* operation, ExprAst* expression) {
     op = operation;
