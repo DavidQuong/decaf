@@ -1,6 +1,8 @@
 #ifndef VALUE_CONSTANTS_H
 #define VALUE_CONSTANTS_H
 
+void throwError(const char* errorMsg, int errorCode);
+
 // Binary Operators
 extern const char* VALUE_OR;
 extern const char* VALUE_AND;
@@ -30,5 +32,28 @@ extern const char* VALUE_INTTYPE;
 extern const char* VALUE_BOOLTYPE;
 extern const char* VALUE_STRINGTYPE;
 extern const int VALUE_SCALAR;
+
+// Error Messages
+extern const char* ERROR_BOOL_TO_INT;
+extern const char* ERROR_INT_TO_BOOL;
+extern const char* ERROR_INVALID_BOOL_OP;
+extern const char* ERROR_INVALID_INT_OP;
+extern const char* ERROR_NOT_INT;
+extern const char* ERROR_NEGATE_BOOL;
+extern const char* ERROR_BINARY_OP_TYPE_MISMATCH;
+extern const char* ERROR_GENERIC_TYPE_MISMATCH;
+extern const char* ERROR_RETURN_MISMATCH;
+extern const char* ERROR_VARIABLE_UNDECLARED;
+extern const char* ERROR_NO_MAIN;
+
+
+// Exit Values
+extern const int EXIT_NO_ERROR;
+extern const int EXIT_ASSIGN_TYPE_MISMATCH ;
+extern const int EXIT_COMPUTE_TYPE_MISMATCH;
+extern int EXIT_VARIABLE_UNDECLARED;
+extern const int EXIT_NO_MAIN;
+
+
 
 #endif

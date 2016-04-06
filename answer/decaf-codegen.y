@@ -26,6 +26,7 @@ extern int yyleng;
 extern int yylineno;
 
 /* void yyerror(char const* s); */
+void verifyCode();
 char* copyString(char* str, int length);
 char escapeCharacter(char escapedChar);
 void generateExterns(vector<ExternExprAst*>* externList);
@@ -70,9 +71,7 @@ static deque<FunctionExprAst*> functionList;
 %%
 
 program: push_symtbl externs push_symtbl class                                                                                          { generateExterns($2);
-                                                                                                                                          generateClass($4);
-                                                                                                                                          popSymbolTable();
-                                                                                                                                          popSymbolTable(); } 
+                                                                                                                                          generateClass($4); }
     ;
 
 externs: externs extern                                                                                                                 { vector<ExternExprAst*>* externList = $1;
@@ -533,10 +532,19 @@ int main() {
     int exitVal = yyparse();
     printf("====================================================================================\n");
     getModule()->dump();
+    verifyCode();
     debug();
 
     return 0;
     //return (exitVal >= EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
+}
+
+/* Verifies that code satisfies requirements (i.e., has main function, etc). */
+void verifyCode() {
+    Value* main = getValue("main");
+    if (main == NULL) {
+        throwError(ERROR_NO_MAIN, EXIT_NO_MAIN);
+    }
 }
 
 /* Report syntax at with line number and text that caused such to standard error. */

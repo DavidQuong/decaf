@@ -11,6 +11,10 @@
 using namespace llvm;
 using namespace std;
 
+static void validateBothIntType(Value* leftValue, Value* rightValue);
+static void validateBothBoolType(Value* leftValue, Value* rightValue);
+static void validateBothSameType(Value* leftValue, Value* rightValue);
+
 const char* MODULE_NAME = "Test";
 const char* BRANCH_ENTRY = "entry";
 const char* BRANCH_END = "end";
@@ -55,7 +59,7 @@ Type* getLLVMType(const char* typeStr) {
     } else if (strcmp(typeStr, VALUE_STRINGTYPE) == 0) {
         type = irBuilder->getInt8PtrTy();
     } else {
-        throw std::runtime_error("Unknown data type.\n");
+        throw runtime_error("Unknown data type.\n");
     }
 
     return type;
@@ -145,7 +149,6 @@ Value* createGlobalScalar(Type* type, char* id, Constant* value) {
 Value* assignArrayIndex(char* id, Value* index, Value* value) {
     Value* array = getValue(id);
     if (array == NULL) {
-        throw runtime_error("Variable " + string(id) + " does not exist.\n");
     }
 
     // Get array location.
@@ -162,7 +165,7 @@ Value* assignArrayIndex(char* id, Value* index, Value* value) {
 Value* accessArrayIndex(char* id, Value* index) {
     Value* array = getValue(id);
     if (array == NULL) {
-        throw runtime_error("Variable " + string(id) + " does not exist.\n");
+        throwError(ERROR_VARIABLE_UNDECLARED, EXIT_VARIABLE_UNDECLARED);
     }
 
     // Get array location.
@@ -186,7 +189,20 @@ Value* declareVariable(Type* type, char* id) {
 Value* assignVariable(char* id, Value* value) {
     Value* variable = getValue(id);
     if (variable == NULL) {
-        throw runtime_error("Variable " + string(id) + " does not exist.\n");
+        throwError(ERROR_VARIABLE_UNDECLARED, EXIT_VARIABLE_UNDECLARED);
+    }
+
+    // Check if variable and value are same type
+    Type* variableType = variable->getType()->getContainedType(0);
+    Type* valueType = value->getType();
+    if (variableType != valueType) { 
+        if (variableType == getLLVMType(VALUE_INTTYPE)) {
+            throwError(ERROR_BOOL_TO_INT, EXIT_ASSIGN_TYPE_MISMATCH);
+        } else if (variableType == getLLVMType(VALUE_BOOLTYPE)) {
+            throwError(ERROR_INT_TO_BOOL, EXIT_ASSIGN_TYPE_MISMATCH);
+        } else {
+            throw runtime_error("Type mismatch.\n");
+        }
     }
 
     return irBuilder->CreateStore(value, variable);
@@ -196,7 +212,7 @@ Value* assignVariable(char* id, Value* value) {
 Value* accessVariable(char* id) {
     Value* value = getValue(id);
     if (value == NULL) {
-        throw runtime_error("Variable " + string(id) + " has not been declared in this scope.\n");
+        throwError(ERROR_VARIABLE_UNDECLARED, EXIT_VARIABLE_UNDECLARED);
     }
 
     return irBuilder->CreateLoad(value, false, id);
@@ -252,6 +268,7 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
     Value* value;
 
     if (strcmp(op, VALUE_OR) == 0) {
+        validateBothBoolType(leftValue, rightValue);
         BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
         Function* currentFunction = currentBlock->getParent();
         BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
@@ -276,6 +293,7 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
         value = node;
         
     } else if (strcmp(op, VALUE_AND) == 0) {
+        validateBothBoolType(leftValue, rightValue);
         BasicBlock* currentBlock = getBuilder()->GetInsertBlock();
         Function* currentFunction = currentBlock->getParent();
         BasicBlock* noskctBlock = BasicBlock::Create(getGlobalContext(), BRANCH_NOSKCT, currentFunction); 
@@ -299,30 +317,43 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
         value = node;
         
     } else if (strcmp(op, VALUE_EQ) == 0) {
+        validateBothSameType(leftValue, rightValue);
         value = irBuilder->CreateICmpEQ(leftValue, rightValue, "eqtmp");
     } else if (strcmp(op, VALUE_NEQ) == 0) {
+        validateBothSameType(leftValue, rightValue);
         value = irBuilder->CreateICmpNE(leftValue, rightValue, "neq");
     } else if (strcmp(op, VALUE_LT) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateICmpSLT(leftValue, rightValue, "lttmp");
     } else if (strcmp(op, VALUE_LEQ) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateICmpSLE(leftValue, rightValue, "leqtmp");
     } else if (strcmp(op, VALUE_GT) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateICmpSGT(leftValue, rightValue, "gttmp");
     } else if (strcmp(op, VALUE_GEQ) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateICmpSGE(leftValue, rightValue, "geqtmp");
     } else if (strcmp(op, VALUE_PLUS) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateAdd(leftValue, rightValue, "addtmp");
     } else if (strcmp(op, VALUE_MINUS) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateSub(leftValue, rightValue, "subtmp");
     } else if (strcmp(op, VALUE_MULT) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateMul(leftValue, rightValue, "multmp");
     } else if (strcmp(op, VALUE_DIV) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateSDiv(leftValue, rightValue, "divtmp");
     } else if (strcmp(op, VALUE_MOD) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateSRem(leftValue, rightValue, "modtmp");
     } else if (strcmp(op, VALUE_RIGHTSHIFT) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateAShr(leftValue, rightValue, "rshifttmp");
     } else if (strcmp(op, VALUE_LEFTSHIFT) == 0) {
+        validateBothIntType(leftValue, rightValue);
         value = irBuilder->CreateShl(leftValue, rightValue, "lshifttmp");
     } else {
         throw runtime_error("Invalid binary operation.\n");
@@ -331,13 +362,52 @@ Value* computeBinaryExpression(char* op, Value* leftValue, Value* rightValue) {
     return value;
 }
 
+// Ensure both values are of int type.
+static void validateBothIntType(Value* leftValue, Value* rightValue) {
+    Type* intType = getLLVMType(VALUE_INTTYPE); 
+    Type* leftType = leftValue->getType();
+    Type* rightType = rightValue->getType();
+    
+    if (leftType != intType || rightType != intType) {
+        throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
+    }
+}
+
+// Ensure both values are of bool type.
+static void validateBothBoolType(Value* leftValue, Value* rightValue) {
+    Type* intType = getLLVMType(VALUE_BOOLTYPE);
+    Type* leftType = leftValue->getType();
+    Type* rightType = rightValue->getType();
+    
+    if (leftType != intType || rightType != intType) {
+        throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
+    }
+}
+
+// Ensure both values are of the same type.
+static void validateBothSameType(Value* leftValue, Value* rightValue) {
+    Type* leftType = leftValue->getType();
+    Type* rightType = rightValue->getType();
+    
+    if (leftType != rightType) {
+        throwError(ERROR_BINARY_OP_TYPE_MISMATCH, EXIT_COMPUTE_TYPE_MISMATCH);
+    }
+}
+
 // Perform the operation on the provided value.
 Value* computeUnaryExpression(char* op, Value* value) {
+    Type* valueType = value->getType();
     Value* returnValue;
 
     if (strcmp(op, VALUE_NOT) == 0) {
+        if (valueType == getLLVMType(VALUE_INTTYPE)) {
+            throwError(ERROR_NOT_INT, EXIT_COMPUTE_TYPE_MISMATCH);
+        }
         returnValue = irBuilder->CreateNot(value, "nottmp");
     } else if (strcmp(op, VALUE_NEGATE) == 0) {
+        if (valueType == getLLVMType(VALUE_BOOLTYPE)) {
+            throwError(ERROR_NEGATE_BOOL, EXIT_COMPUTE_TYPE_MISMATCH);
+        }
         returnValue = irBuilder->CreateSub(irBuilder->getInt32(0), value, "negtmp");
     } else {
         throw runtime_error("Invalid unary operation\n");

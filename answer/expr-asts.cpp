@@ -281,6 +281,13 @@ Value* ReturnExprAst::generateCode() {
     Value* value;
     if (expr != NULL) {
         value = expr->generateCode();
+        
+        // Ensure value is same type as return type.
+        Type* returnType = getBuilder()->GetInsertBlock()->getParent()->getReturnType();
+        if (value->getType() != returnType) {
+            throwError(ERROR_RETURN_MISMATCH, EXIT_COMPUTE_TYPE_MISMATCH);
+        }
+
         getBuilder()->CreateRet(value);
     } else {
         Type* type = getLLVMType(VALUE_VOIDTYPE);
