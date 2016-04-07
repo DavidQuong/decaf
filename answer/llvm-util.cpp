@@ -316,17 +316,17 @@ void validateBothIntType(Value* leftValue, Value* rightValue) {
     Type* rightType = rightValue->getType();
     
     if (leftType != intType || rightType != intType) {
-        throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
+        throwError(ERROR_INVALID_BOOL_OP, EXIT_COMPUTE_TYPE_MISMATCH);
     }
 }
 
 // Ensure both values are of bool type.
 void validateBothBoolType(Value* leftValue, Value* rightValue) {
-    Type* intType = getLLVMType(VALUE_BOOLTYPE);
+    Type* boolType = getLLVMType(VALUE_BOOLTYPE);
     Type* leftType = leftValue->getType();
     Type* rightType = rightValue->getType();
     
-    if (leftType != intType || rightType != intType) {
+    if (leftType != boolType || rightType != boolType) {
         throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
     }
 }

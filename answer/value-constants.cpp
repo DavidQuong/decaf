@@ -53,7 +53,9 @@ const char* ERROR_NO_MAIN = "There exists no main function.\n";
 
 // Exit Values
 int EXIT_NO_ERROR = 0;
-int EXIT_ASSIGN_TYPE_MISMATCH = -6;
+int EXIT_ERROR = 1;
+/* int EXIT_ASSIGN_TYPE_MISMATCH = -6; */
+int EXIT_ASSIGN_TYPE_MISMATCH = 1;
 int EXIT_COMPUTE_TYPE_MISMATCH = 1;
 int EXIT_VARIABLE_UNDECLARED = 1;
 int EXIT_NO_MAIN = 1;

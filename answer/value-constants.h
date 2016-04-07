@@ -49,6 +49,7 @@ extern const char* ERROR_NO_MAIN;
 
 // Exit Values
 extern const int EXIT_NO_ERROR;
+extern const int EXIT_ERROR;
 extern const int EXIT_ASSIGN_TYPE_MISMATCH ;
 extern const int EXIT_COMPUTE_TYPE_MISMATCH;
 extern int EXIT_VARIABLE_UNDECLARED;

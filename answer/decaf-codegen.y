@@ -535,8 +535,8 @@ int main() {
     verifyCode();
     debug();
 
-    return 0;
-    //return (exitVal >= EXIT_FAILURE ? EXIT_FAILURE : EXIT_SUCCESS);
+    return EXIT_NO_ERROR;
+    return (exitVal == EXIT_NO_ERROR ? EXIT_NO_ERROR : EXIT_ERROR);
 }
 
 /* Verifies that code satisfies requirements (i.e., has main function, etc). */
