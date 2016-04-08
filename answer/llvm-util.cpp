@@ -250,7 +250,16 @@ Value* callFunction(char* id, vector<Value*>* args) {
         i++;
     }
 
-    return irBuilder->CreateCall(function, convertedArgs);
+    
+    Value* returnValue;
+    // Do not assign a temporary variable (twine) when return type is void.
+    if (function->getReturnType() == getLLVMType(VALUE_VOIDTYPE)) {
+       returnValue = irBuilder->CreateCall(function, convertedArgs);
+    } else {
+       returnValue = CallInst::Create(function, convertedArgs, "calltmp", irBuilder->GetInsertBlock());
+    }
+
+    return returnValue;
 }
 
 /* Create a store value for the provided parameter, as well as store in the symbol table. */
@@ -356,7 +365,6 @@ Value* computeUnaryExpression(char* op, Value* value) {
     }
 
     Value* returnValue;
-
     if (strcmp(op, VALUE_NOT) == 0) {
         if (valueType == getLLVMType(VALUE_INTTYPE)) {
             throwError(ERROR_NOT_INT, EXIT_COMPUTE_TYPE_MISMATCH);

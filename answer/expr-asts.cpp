@@ -61,6 +61,7 @@ FunctionExprAst::FunctionExprAst(Type* returnType, char* identifier, vector<pair
 Value* FunctionExprAst::generateCode() {
     function = createFunctionHeader(type, id);
     block = BasicBlock::Create(getGlobalContext(), BRANCH_ENTRY, function);
+    deque<ExprAst*>* paramExprList = new deque<ExprAst*>;
 
     // Add parameters (Arguments) to function header, no code generated yet.
     for (vector<pair<Type*,char*>*>::iterator it = paramList->begin(); it != paramList->end(); it++) {
@@ -70,8 +71,10 @@ Value* FunctionExprAst::generateCode() {
 
         Argument* createdParam = new Argument(paramType, paramId, function);
         FunctionParamExprAst* paramExpr = new FunctionParamExprAst(paramType, paramId, createdParam);
-        stmtList->push_front(paramExpr);
+        paramExprList->push_back(paramExpr);
     }
+
+    stmtList->insert(stmtList->begin(), paramExprList->begin(), paramExprList->end());
     
     return function;
 }
