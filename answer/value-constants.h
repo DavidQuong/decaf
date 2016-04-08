@@ -36,14 +36,15 @@ extern const int VALUE_SCALAR;
 // Error Messages
 extern const char* ERROR_BOOL_TO_INT;
 extern const char* ERROR_INT_TO_BOOL;
-extern const char* ERROR_INVALID_BOOL_OP;
 extern const char* ERROR_INVALID_INT_OP;
+extern const char* ERROR_INVALID_BOOL_OP;
 extern const char* ERROR_NOT_INT;
 extern const char* ERROR_NEGATE_BOOL;
 extern const char* ERROR_BINARY_OP_TYPE_MISMATCH;
 extern const char* ERROR_GENERIC_TYPE_MISMATCH;
 extern const char* ERROR_RETURN_MISMATCH;
 extern const char* ERROR_VARIABLE_UNDECLARED;
+extern const char* ERROR_FUNCTION_IS_VOID;
 extern const char* ERROR_NO_MAIN;
 
 

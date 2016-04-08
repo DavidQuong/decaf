@@ -42,13 +42,14 @@ int VALUE_SCALAR = -1;
 // Error Messages
 const char* ERROR_BOOL_TO_INT = "Cannot assign a boolean value to an integer variable.\n";
 const char* ERROR_INT_TO_BOOL = "Cannot assign an integer value to a boolean variable.\n";
-const char* ERROR_INVALID_BOOL_OP = "Cannot perform integer operation on a boolean value or variable.\n";
-const char* ERROR_INVALID_INT_OP = "Cannot perform boolean operation on an integer value or variable.\n";
+const char* ERROR_INVALID_INT_OP = "Cannot perform this operation, integers only.\n";
+const char* ERROR_INVALID_BOOL_OP = "Cannot perform this operation, booleans only.\n";
 const char* ERROR_NOT_INT = "Cannot negate an integer value with '!' operator.\n";
 const char* ERROR_NEGATE_BOOL = "Cannot negate a boolean value with '-' operator.\n";
-const char* ERROR_BINARY_OP_TYPE_MISMATCH = "Cannot perform operation with an integer and boolean (type mismatch).\n";
+const char* ERROR_BINARY_OP_TYPE_MISMATCH = "Cannot perform operation with an values of two different types (type mismatch).\n";
 const char* ERROR_RETURN_MISMATCH = "Invalid type for return statement.\n";
 const char* ERROR_VARIABLE_UNDECLARED = "Variable has not been declared.\n";
+const char* ERROR_FUNCTION_IS_VOID = "Function has a void return type and therefore has no return value.\n";
 const char* ERROR_NO_MAIN = "There exists no main function.\n";
 
 // Exit Values

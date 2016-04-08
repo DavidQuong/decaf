@@ -441,7 +441,7 @@ p5_expression: root_expression                                                  
 root_expression: expression_variable                                                                                                    { $$ = $1; }
     | method_call                                                                                                                       { $$ = $1; }
     | constant                                                                                                                          { $$ = $1; }
-    | unary_operator root_expression                                                                                                    { $$ = new UnaryExprAst($1, $2); }
+    | unary_operator expression                                                                                                         { $$ = new UnaryExprAst($1, $2); }
     | T_LPAREN expression T_RPAREN                                                                                                      { $$ = $2; }
     ;
 

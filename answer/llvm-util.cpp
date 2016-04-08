@@ -191,10 +191,12 @@ Value* assignVariable(char* id, Value* value) {
     // Check if variable and value are same type
     Type* variableType = variable->getType()->getContainedType(0);
     Type* valueType = value->getType();
-    if (variableType != valueType) { 
-        if (variableType == getLLVMType(VALUE_INTTYPE)) {
+    if (variableType != valueType) {
+        if (valueType == getLLVMType(VALUE_VOIDTYPE)) { // Value is of type void (badref).
+            throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+        } else if (variableType == getLLVMType(VALUE_INTTYPE)) { // Variable is an integer, but value is a boolean.
             throwError(ERROR_BOOL_TO_INT, EXIT_ASSIGN_TYPE_MISMATCH);
-        } else if (variableType == getLLVMType(VALUE_BOOLTYPE)) {
+        } else if (variableType == getLLVMType(VALUE_BOOLTYPE)) { // Variable is a boolean, but value is an integer.
             throwError(ERROR_INT_TO_BOOL, EXIT_ASSIGN_TYPE_MISMATCH);
         } else {
             throw runtime_error("Type mismatch.\n");
@@ -233,6 +235,10 @@ Value* callFunction(char* id, vector<Value*>* args) {
     for (Function::arg_iterator paramIt = function->arg_begin(); paramIt != function->arg_end(); paramIt++) {
         Argument* param = paramIt;
         Value* arg = args->at(i);
+
+        if (arg->getType() == getLLVMType(VALUE_VOIDTYPE)) {
+            throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+        }
         
         if (param->getType() == getLLVMType(VALUE_INTTYPE) && arg->getType() == getLLVMType(VALUE_BOOLTYPE)) {
             Value* convertedArg = convertBoolToInt(arg);
@@ -316,7 +322,7 @@ void validateBothIntType(Value* leftValue, Value* rightValue) {
     Type* rightType = rightValue->getType();
     
     if (leftType != intType || rightType != intType) {
-        throwError(ERROR_INVALID_BOOL_OP, EXIT_COMPUTE_TYPE_MISMATCH);
+        throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
     }
 }
 
@@ -327,7 +333,7 @@ void validateBothBoolType(Value* leftValue, Value* rightValue) {
     Type* rightType = rightValue->getType();
     
     if (leftType != boolType || rightType != boolType) {
-        throwError(ERROR_INVALID_INT_OP, EXIT_COMPUTE_TYPE_MISMATCH);
+        throwError(ERROR_INVALID_BOOL_OP, EXIT_COMPUTE_TYPE_MISMATCH);
     }
 }
 
@@ -344,6 +350,11 @@ void validateBothSameType(Value* leftValue, Value* rightValue) {
 // Perform the operation on the provided value.
 Value* computeUnaryExpression(char* op, Value* value) {
     Type* valueType = value->getType();
+    // Ensure argument is not void (badref).
+    if (valueType == getLLVMType(VALUE_VOIDTYPE)) {
+        throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+    }
+
     Value* returnValue;
 
     if (strcmp(op, VALUE_NOT) == 0) {

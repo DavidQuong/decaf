@@ -145,6 +145,11 @@ Value* ForBlockExprAst::generateCode() {
     // Start enty point for loop.
     getBuilder()->SetInsertPoint(loopBlock);
     Value* conditionValue = condExpr->generateCode();
+    
+    // Ensure argument is not void (badref).
+    if (conditionValue->getType() == getLLVMType(VALUE_VOIDTYPE)) {
+        throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+    }
 
     // Create conditional branch to either body or end.
     getBuilder()->CreateCondBr(conditionValue, bodyBlock, endBlock);
@@ -191,6 +196,11 @@ Value* WhileBlockExprAst::generateCode() {
     getBuilder()->SetInsertPoint(loopBlock);
     Value* conditionValue = condExpr->generateCode();
 
+    // Ensure argument is not void (badref).
+    if (conditionValue->getType() == getLLVMType(VALUE_VOIDTYPE)) {
+        throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+    }
+
     // Create conditional branch to either body or end.
     getBuilder()->CreateCondBr(conditionValue, bodyBlock, endBlock);
 
@@ -224,6 +234,11 @@ Value* IfBlockExprAst::generateCode() {
     // insert conditional expression code.
     getBuilder()->SetInsertPoint(ifstartBlock);
     Value* conditionValue = condExpr->generateCode();
+    
+    // Ensure argument is not void (badref).
+    if (conditionValue->getType() == getLLVMType(VALUE_VOIDTYPE)) {
+        throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+    }
 
     // Create conditional branch to either iftrue or end.
     getBuilder()->CreateCondBr(conditionValue, iftrueBlock, endBlock);
@@ -256,6 +271,11 @@ Value* IfElseBlockExprAst::generateCode() {
     // insert conditional expression code.
     getBuilder()->SetInsertPoint(ifstartBlock);
     Value* conditionValue = condExpr->generateCode();
+
+    // Ensure argument is not void (badref).
+    if (conditionValue->getType() == getLLVMType(VALUE_VOIDTYPE)) {
+        throwError(ERROR_FUNCTION_IS_VOID, EXIT_ERROR);
+    }
 
     // Create conditional branch to either iftrue or end.
     getBuilder()->CreateCondBr(conditionValue, iftrueBlock, iffalseBlock);
