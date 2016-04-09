@@ -17,7 +17,7 @@ extern char* yytext;
 
 extern "C"
 {
-  extern int yyerror(const char *);
+  int yyerror(const char* s);
   int yyparse(void);
   int yylex(void);  
   int yywrap(void);

@@ -535,7 +535,6 @@ int main() {
     verifyCode();
     debug();
 
-    /* return EXIT_NO_ERROR; */
     return (exitVal == EXIT_NO_ERROR ? EXIT_NO_ERROR : EXIT_ERROR);
 }
 
@@ -548,10 +547,10 @@ void verifyCode() {
 }
 
 /* Report syntax at with line number and text that caused such to standard error. */
-/* void yyerror(char const* s) { */
-/*     fprintf(stderr,"%d: %s at %s\n", yylineno, s, yytext); */
-/*     exit(EXIT_FAILURE); */
-/* } */
+int yyerror(char const* s) {
+    fprintf(stderr,"%d: %s at %s\n", yylineno, s, yytext);
+    exit(EXIT_ERROR);
+}
 
 /* Copy the provided string, while also converting the escape characters contained within the string to 
    their normal representation. The allocated string may allocate more space than what is actually needed.*/
