@@ -1,0 +1,48 @@
+Lexer:
+    Used flex to tokenize input file, requiring us to define regular expressions for accepted input text.
+
+Parser:
+    Used bison to parse tokens from lexer, requiring us to define context free grammar for accepted grammar.
+
+HW4: Split functionality up into separate C/C++ files, like so
+- decaf-codegen.lex, provides lexer functionality by defining regular expressions to tokenize input text.
+- decaf-codegen.y, provides parser functionality and is the core of the program.
+- symbol-table.cpp, provides symbol table functionality by maintaining names of functions, variables, etc..
+- expr-asts.cpp, defines all classes used in code generation.
+- llvm-util.cpp, defines useful functions for LLVM code generation.
+- llvm-pass.cpp, defines code used in code optmization, maintains a FunctionPassManager.
+- value-constants.cpp, defines constants used through code, such as error messages and codes.
+
+Noteworthy designs:
+- In order to be able to call functions that were not declared/defined until afterwards, all code within a function
+  had to be defered until the after the scanner and parser had completed their duties. Initially we were procedurally
+  generating our code but tests such as backward.decaf disallowed this. We therefore had to define the functions, such as
+  to produce a prototype, and store all the statements contained in the function in a list (deque). We then called our
+  recursive generateCode() function on all those in the list at the end. See generateClass function in decaf-codegen.y (line 628).
+
+Optimizations - see llvm-pass.cpp
+(a) Did not successfully implement register usage. Attempted to add createPromoteMemoryToRegisterPass() 
+    to our FunctionPassManager, however doing such would delete many vital instructions from the generate 
+    code. 
+    
+    See line 20 of llvm-pass. 
+
+(b) Did not successfully implement peephole optimizations. Attempted to add createInstructionCombiningPass()
+    our FunctionPassManager, but adding such would hang for quicksort.decaf in q6-success on the ./check-hw.p4
+    script, therefore the test suite would never complete. However, the program would complete execution if 
+    not run via the script, like so "./answer/decaf-codegen < testcases/q6-success/quicksort.decaf".
+    
+    Potentially by uncommenting line 23 of llvm-pass.cpp and recompiling, optimizations might be correct.
+
+(c) Successfully implemented re-association of expressions by adding createReassociatePass() to our FunctionPassManager.
+    
+    See line 26 of llvm-pass.
+
+(d) Successfully implemented common sub-expression optimization by adding createGVNPass() to our FunctionPassManager.
+
+    See line 29 of llvm-pass.
+
+(e) Did not successfully implement CFG simplification. Attempted to add createCFGSimplificationPass() to our FunctionPassManager,
+    but failed many of the tests pertaining to for and while loops, and would also hand on quicksort.decaf.
+
+    See line 32 of llvm-pass.
