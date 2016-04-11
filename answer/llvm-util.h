@@ -4,6 +4,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
+#include "llvm/PassManager.h"
 #include "value-constants.h"
 #include <stdexcept>
 #include <string>

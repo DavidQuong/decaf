@@ -1,6 +1,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Module.h"
+#include "llvm-pass.h"
 #include "llvm-util.h"
 #include "symbol-table.h"
 #include "value-constants.h"
@@ -25,11 +26,15 @@ const char* BRANCH_IFFALSE = "iffalse";
 
 static Module* codeModule;
 static IRBuilder<>* irBuilder;
+static FunctionPassManager* passManager;
 
 /* Initialize LLVM components. */
 void initializeLLVM() {
     codeModule = new Module(MODULE_NAME, getGlobalContext());
     irBuilder = new IRBuilder<>(getGlobalContext());
+    
+    // For code optimization
+    initializePassManagers(codeModule);
 }
 
 /* Return the created module, used to reference current code context. */

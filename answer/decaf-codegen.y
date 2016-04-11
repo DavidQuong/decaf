@@ -2,10 +2,6 @@
 
 #include "exprdefs.h"
 #include "expr-asts.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Analysis/Verifier.h"
 #include "llvm-util.h"
 #include "symbol-table.h"
 #include "value-constants.h"
@@ -18,14 +14,12 @@
 #include <string>
 #include <vector>
 
-using namespace llvm;
 using namespace std;
 
 extern char* yytext;
 extern int yyleng;
 extern int yylineno;
 
-/* void yyerror(char const* s); */
 void verifyCode();
 char* copyString(char* str, int length);
 char escapeCharacter(char escapedChar);
@@ -529,6 +523,7 @@ push_symtbl: /* Empty */                                                        
 int main() {
     initializeLLVM();
 
+
     int exitVal = yyparse();
     printf("====================================================================================\n");
     getModule()->dump();
@@ -641,4 +636,6 @@ void generateClass(deque<ExprAst*>* exprList) {
         FunctionExprAst* expr = *it;
         expr->generateDeferedCode();
     }
+
+
 }

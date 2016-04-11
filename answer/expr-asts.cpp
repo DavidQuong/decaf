@@ -1,4 +1,5 @@
 #include "expr-asts.h"
+#include "llvm-pass.h"
 #include "llvm-util.h"
 #include "symbol-table.h"
 #include <cstdio>
@@ -36,6 +37,7 @@ Value* FieldVarDeclExprAst::generateCode() {
         value = createArray(type, id, size);
     } else { // For arrays of size 0;
         throw runtime_error("Invalid error size, must be at least 1.\n");
+        throwError(ERROR_INDEX_TOO_LOW, EXIT_ERROR);
     }
 
     return value;
@@ -88,6 +90,7 @@ void FunctionExprAst::generateDeferedCode() {
     }
 
     createDefaultReturn(type);
+    getFunctionPassManager()->run(*function);
     popSymbolTable();
 }
 

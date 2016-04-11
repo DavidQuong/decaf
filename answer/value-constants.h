@@ -45,6 +45,7 @@ extern const char* ERROR_GENERIC_TYPE_MISMATCH;
 extern const char* ERROR_RETURN_MISMATCH;
 extern const char* ERROR_VARIABLE_UNDECLARED;
 extern const char* ERROR_FUNCTION_IS_VOID;
+extern const char* ERROR_INDEX_TOO_LOW;
 extern const char* ERROR_NO_MAIN;
 
 

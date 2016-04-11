@@ -10,7 +10,8 @@ mv=/bin/mv -f
 targets=
 cpptargets=
 # deps=decaf-ast.cc llvm-codegen.cc symboltable.cc
-deps=expr-asts.cpp llvm-util.cpp symbol-table.cpp value-constants.cpp
+deps=expr-asts.cpp llvm-pass.cpp llvm-util.cpp symbol-table.cpp value-constants.cpp
+pass=decaf-pass.cpp
 # llvmcpp=decaf-llvm
 llvmcpp=decaf-codegen
 

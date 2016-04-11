@@ -5,11 +5,8 @@
 #include <stdlib.h>
 #include <vector>
 
-using llvm::Function;
-using llvm::Value;
-using std::map;
-using std::string;
-using std::vector;
+using namespace llvm;
+using namespace std;
 
 static const int INDEX_EXTERN = 0;
 static const int INDEX_CLASS = 1;

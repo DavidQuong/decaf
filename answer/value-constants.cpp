@@ -50,6 +50,7 @@ const char* ERROR_BINARY_OP_TYPE_MISMATCH = "Cannot perform operation with an va
 const char* ERROR_RETURN_MISMATCH = "Invalid type for return statement.\n";
 const char* ERROR_VARIABLE_UNDECLARED = "Variable has not been declared.\n";
 const char* ERROR_FUNCTION_IS_VOID = "Function has a void return type and therefore has no return value.\n";
+const char* ERROR_INDEX_TOO_LOW = "Invalid array size, must be at least 1.\n";
 const char* ERROR_NO_MAIN = "There exists no main function.\n";
 
 // Exit Values
