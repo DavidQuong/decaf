@@ -26,7 +26,7 @@ void initializePassManagers(Module* module) {
     functionPassManager->add(createReassociatePass());
 
     // Eliminate common sub-expressions (GVN)
-    /* functionPassManager->add(createGVNPass()); */
+    functionPassManager->add(createGVNPass());
     
     // Simplify the control flow graph (CFG simplification)
     /* functionPassManager->add(createCFGSimplificationPass()); */

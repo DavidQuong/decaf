@@ -525,10 +525,10 @@ int main() {
 
 
     int exitVal = yyparse();
-    printf("====================================================================================\n");
+    /* printf("====================================================================================\n"); */
     getModule()->dump();
     verifyCode();
-    debug();
+    /* debug(); */
 
     return (exitVal == EXIT_NO_ERROR ? EXIT_NO_ERROR : EXIT_ERROR);
 }
@@ -636,6 +636,4 @@ void generateClass(deque<ExprAst*>* exprList) {
         FunctionExprAst* expr = *it;
         expr->generateDeferedCode();
     }
-
-
 }

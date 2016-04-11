@@ -71,157 +71,108 @@ identifier ({char_alpha}|_)({char_alphanum}|_)*
 
 %%
 
-&&                                          { printf("%s", yytext);
-                                              updateLinePosition();
+&&                                          { updateLinePosition();
                                               return T_AND; }
-=                                           { printf("%s", yytext);
-                                              updateLinePosition();
+=                                           { updateLinePosition();
                                               return T_ASSIGN; }
-bool                                        { printf("%s", yytext);
-                                              updateLinePosition();
+bool                                        { updateLinePosition();
                                               return T_BOOLTYPE; }
-break                                       { printf("%s", yytext);
-                                              updateLinePosition();
+break                                       { updateLinePosition();
                                               return T_BREAK; }
-\'{char_lit}*\'                             { printf("%s", yytext);
-                                              updateLinePosition();
+\'{char_lit}*\'                             { updateLinePosition();
                                               yylval.num = convertChararacterString(yytext);
                                               return T_CHARCONSTANT; }
 \'                                          { printError(ERROR_MESSAGE_UNTERMINATED_CHAR); }
-class                                       { printf("%s", yytext);
-                                              updateLinePosition();
+class                                       { updateLinePosition();
                                               return T_CLASS; }
 \/\/({char_lit}|{space}|\')*\n              /* Ignore comments */
-,                                           { printf("%s", yytext);
-                                              updateLinePosition();
+,                                           { updateLinePosition();
                                               return T_COMMA; }
-continue                                    { printf("%s", yytext);
-                                              updateLinePosition();
+continue                                    { updateLinePosition();
                                               return T_CONTINUE; }
-\/                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\/                                          { updateLinePosition();
                                               return T_DIV; }
-\.                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\.                                          { updateLinePosition();
                                               return T_DOT; }
-else                                        { printf("%s", yytext);
-                                              updateLinePosition();
+else                                        { updateLinePosition();
                                               return T_ELSE; }
-==                                          { printf("%s", yytext);
-                                              updateLinePosition();
+==                                          { updateLinePosition();
                                               return T_EQ; }
-extends                                     { printf("%s", yytext);
-                                              updateLinePosition();
+extends                                     { updateLinePosition();
                                               return T_EXTENDS; }
-extern                                      { printf("%s", yytext);
-                                              updateLinePosition();
+extern                                      { updateLinePosition();
                                               return T_EXTERN; }
-false                                       { printf("%s", yytext);
-                                              updateLinePosition();
+false                                       { updateLinePosition();
                                               return T_FALSE; }
-for                                         { printf("%s", yytext);
-                                              updateLinePosition();
+for                                         { updateLinePosition();
                                               return T_FOR; }
-\>=                                         { printf("%s", yytext);
-                                              updateLinePosition();
+\>=                                         { updateLinePosition();
                                               return T_GEQ; }
-\>                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\>                                          { updateLinePosition();
                                               return T_GT; }
-if                                          { printf("%s", yytext);
-                                              updateLinePosition();
+if                                          { updateLinePosition();
                                               return T_IF; }
-{int}                                       { printf("%s", yytext);
-                                              updateLinePosition();
+{int}                                       { updateLinePosition();
                                               yylval.num = strtol(yytext, NULL, 0);
                                               return T_INTCONSTANT; }
-int                                         { printf("%s", yytext);
-                                              updateLinePosition();
+int                                         { updateLinePosition();
                                               return T_INTTYPE; }
-\{                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\{                                          { updateLinePosition();
                                               return T_LCB; }
-\<\<                                        { printf("%s", yytext);
-                                              updateLinePosition();
+\<\<                                        { updateLinePosition();
                                               return T_LEFTSHIFT; }
-\<=                                         { printf("%s", yytext);
-                                              updateLinePosition();
+\<=                                         { updateLinePosition();
                                               return T_LEQ; }
-\(                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\(                                          { updateLinePosition();
                                               return T_LPAREN; }
-\[                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\[                                          { updateLinePosition();
                                               return T_LSB; }
-\<                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\<                                          { updateLinePosition();
                                               return T_LT; }
--                                           { printf("%s", yytext);
-                                              updateLinePosition();
+-                                           { updateLinePosition();
                                               return T_MINUS; }
-%                                           { printf("%s", yytext);
-                                              updateLinePosition();
+%                                           { updateLinePosition();
                                               return T_MOD; }
-\*                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\*                                          { updateLinePosition();
                                               return T_MULT; }
-!=                                          { printf("%s", yytext);
-                                              updateLinePosition();
+!=                                          { updateLinePosition();
                                               return T_NEQ; }
-new                                         { printf("%s", yytext);
-                                              updateLinePosition();
+new                                         { updateLinePosition();
                                               return T_NEW; }
-!                                           { printf("%s", yytext);
-                                              updateLinePosition();
+!                                           { updateLinePosition();
                                               return T_NOT; }
-null                                        { printf("%s", yytext);
-                                              updateLinePosition();
+null                                        { updateLinePosition();
                                               return T_NULL; }
-\|\|                                        { printf("%s", yytext);
-                                              updateLinePosition();
+\|\|                                        { updateLinePosition();
                                               return T_OR; }
-\+                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\+                                          { updateLinePosition();
                                               return T_PLUS; }
-\}                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\}                                          { updateLinePosition();
                                               return T_RCB; }
-return                                      { printf("%s", yytext);
-                                              updateLinePosition();
+return                                      { updateLinePosition();
                                               return T_RETURN; }
-\>\>                                        { printf("%s", yytext);
-                                              updateLinePosition();
+\>\>                                        { updateLinePosition();
                                               return T_RIGHTSHIFT; }
-\)                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\)                                          { updateLinePosition();
                                               return T_RPAREN; }
-\]                                          { printf("%s", yytext);
-                                              updateLinePosition();
+\]                                          { updateLinePosition();
                                               return T_RSB; }
-;                                           { printf("%s", yytext);
-                                              updateLinePosition();
+;                                           { updateLinePosition();
                                               return T_SEMICOLON; }
-\"{str_lit}*\"                              { printf("%s", yytext);
-                                              updateLinePosition();
+\"{str_lit}*\"                              { updateLinePosition();
                                               return T_STRINGCONSTANT; }
 \"                                          { printError(ERROR_MESSAGE_NEWLINE_IN_STRING); }
-string                                      { printf("%s", yytext);
-                                              updateLinePosition();
+string                                      { updateLinePosition();
                                               return T_STRINGTYPE; }
-true                                        { printf("%s", yytext);
-                                              updateLinePosition();
+true                                        { updateLinePosition();
                                               return T_TRUE; }
-void                                        { printf("%s", yytext);
-                                              updateLinePosition();
+void                                        { updateLinePosition();
                                               return T_VOID; }
-while                                       { printf("%s", yytext);
-                                              updateLinePosition();
+while                                       { updateLinePosition();
                                               return T_WHILE; }
-{identifier}                                { printf("%s", yytext);
-                                              updateLinePosition();
+{identifier}                                { updateLinePosition();
                                               return T_ID; }
-{whitespace}+                               { printf("%s", yytext);
-                                              updateLinePosition(); }
+{whitespace}+                               { updateLinePosition(); }
 .|\n                                        { printError(ERROR_MESSAGE_UNEXPECTED_CHAR); }                                              
 
                                               
