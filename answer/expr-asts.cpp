@@ -83,13 +83,24 @@ Value* FunctionExprAst::generateCode() {
 void FunctionExprAst::generateDeferedCode() {
     getBuilder()->SetInsertPoint(block);
     pushSymbolTable();
+    bool hasReturn = false;
 
     for (deque<ExprAst*>::iterator it = stmtList->begin(); it != stmtList->end(); it++) {
         ExprAst* expr = *it;
         expr->generateCode();
+
+        // Check if a terminating (return) statement was generated,
+        // and halt code generation if so.
+        if (getBuilder()->GetInsertBlock()->getTerminator() != NULL) {
+            hasReturn = true;
+            break;
+        }
     }
 
-    createDefaultReturn(type);
+    // Add default return if no return statement was present.
+    if (!hasReturn) {
+        createDefaultReturn(type);
+    }
     getFunctionPassManager()->run(*function);
     popSymbolTable();
 }
@@ -112,6 +123,12 @@ Value* BlockExprAst::generateCode() {
     for (deque<ExprAst*>::iterator it = stmtList->begin(); it != stmtList->end(); it++) {
         ExprAst* expr = *it;
         expr->generateCode();
+        
+        // Check if a terminating (return) statement was generated,
+        // and halt code generation if so.
+        if (getBuilder()->GetInsertBlock()->getTerminator() != NULL) {
+            break;
+        }
     }
 
     popSymbolTable();
@@ -163,11 +180,14 @@ Value* ForBlockExprAst::generateCode() {
     // Create body block and branch to next.
     getBuilder()->SetInsertPoint(bodyBlock);
     blockExpr->generateCode();
-    getBuilder()->CreateBr(nextBlock);
+    // Only generate branch statement if no other terminating statement found.
+    if (getBuilder()->GetInsertBlock()->getTerminator() == NULL) {
+        getBuilder()->CreateBr(nextBlock);
+    }
 
     // Create next block and branch back to loop.
     getBuilder()->SetInsertPoint(nextBlock);
-    // Generte variable re-assignments.
+    // Generate variable re-assignments.
     for (deque<ExprAst*>::iterator it = updateList->begin(); it != updateList->end(); it++) {
         ExprAst* expr = *it;
         expr->generateCode();
@@ -213,7 +233,11 @@ Value* WhileBlockExprAst::generateCode() {
     // Insert body block code.
     getBuilder()->SetInsertPoint(bodyBlock);
     blockExpr->generateCode();
-    getBuilder()->CreateBr(loopBlock);
+
+    // Only generate branch statement if no other terminating statement found.
+    if (getBuilder()->GetInsertBlock()->getTerminator() == NULL) {
+        getBuilder()->CreateBr(loopBlock);
+    }
 
     // Create return (end) point.
     getBuilder()->SetInsertPoint(endBlock);
@@ -252,7 +276,10 @@ Value* IfBlockExprAst::generateCode() {
     // Insert iftrue block code.
     getBuilder()->SetInsertPoint(iftrueBlock);
     blockExpr->generateCode();
-    getBuilder()->CreateBr(endBlock);
+    // Only generate branch statement if no other terminating statement found.
+    if (getBuilder()->GetInsertBlock()->getTerminator() == NULL) {
+        getBuilder()->CreateBr(endBlock);
+    }
 
     // Create return (end) point.
     getBuilder()->SetInsertPoint(endBlock);
@@ -289,12 +316,18 @@ Value* IfElseBlockExprAst::generateCode() {
     // Insert ifstart block code.
     getBuilder()->SetInsertPoint(iftrueBlock);
     trueBlockExpr->generateCode();
-    getBuilder()->CreateBr(endBlock);
+    // Only generate branch statement if no other terminating statement found.
+    if (getBuilder()->GetInsertBlock()->getTerminator() == NULL) {
+        getBuilder()->CreateBr(endBlock);
+    }
 
     // Insert iffalse block code.
     getBuilder()->SetInsertPoint(iffalseBlock);
     falseBlockExpr->generateCode();
-    getBuilder()->CreateBr(endBlock);
+    // Only generate branch statement if no other terminating statement found.
+    if (getBuilder()->GetInsertBlock()->getTerminator() == NULL) {
+        getBuilder()->CreateBr(endBlock);
+    }
 
     // Create return (end) point.
     getBuilder()->SetInsertPoint(endBlock);

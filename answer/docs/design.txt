@@ -21,28 +21,27 @@ Noteworthy designs:
   recursive generateCode() function on all those in the list at the end. See generateClass function in decaf-codegen.y (line 628).
 
 Optimizations - see llvm-pass.cpp
-(a) Did not successfully implement register usage. Attempted to add createPromoteMemoryToRegisterPass() 
-    to our FunctionPassManager, however doing such would delete many vital instructions from the generate 
-    code. 
-    
-    See line 20 of llvm-pass. 
+- Implemented all required optimizations by adding the following to our FunctionPassManager in llvm-pass.cpp:
+    - createBasicAliasAnalysisPass(), which added support for GVN.
+    - createPromoteMemoryToRegisterPass(), which converts stack allocation (alloca) into register usage (mem2reg)
+    - createInstructionCombiningPass(), which provides peephole optimizations
+    - createReassociatiePass(), which provides the re-associate expression optimizations
+    - createGVNPass(), which eliminates common sub-expressions (GVN)
+    - createCFGSimplificationPass(), which simplifies the control flow graph
 
-(b) Did not successfully implement peephole optimizations. Attempted to add createInstructionCombiningPass()
-    our FunctionPassManager, but adding such would hang for quicksort.decaf in q6-success on the ./check-hw.p4
-    script, therefore the test suite would never complete. However, the program would complete execution if 
-    not run via the script, like so "./answer/decaf-codegen < testcases/q6-success/quicksort.decaf".
-    
-    Potentially by uncommenting line 23 of llvm-pass.cpp and recompiling, optimizations might be correct.
+These optimizations were perform on the functions in question after all the code was generated, see line 104 of expr-ast.cpp.
 
-(c) Successfully implemented re-association of expressions by adding createReassociatePass() to our FunctionPassManager.
-    
-    See line 26 of llvm-pass.
+In order to apply these optimizations without indefinite hanging or test failures, we had to ensure that there were no statements 
+after a terminating statement, such as a ret or br, in a given block.
 
-(d) Successfully implemented common sub-expression optimization by adding createGVNPass() to our FunctionPassManager.
+Common cases were a ret instruction following a another ret instruction. Like so:
+    ret %ex
+    ret 0
+Or a br statement following a return. Like so:
+    ret %ex
+    br %next
 
-    See line 29 of llvm-pass.
-
-(e) Did not successfully implement CFG simplification. Attempted to add createCFGSimplificationPass() to our FunctionPassManager,
-    but failed many of the tests pertaining to for and while loops, and would also hand on quicksort.decaf.
-
-    See line 32 of llvm-pass.
+To ensure that this did not happen, we frequently had to ensure that no terminating statement was generated as of that point.
+By using the GetInsertBlock() function from the builder, and the getTerminator() method of that block, we were able to do such.
+We had to constantly check for such whenever generating code for any "block", and we had to check prior to generating a branch
+statement, as to avoid an unnecessary branch. By doing so, optimizations executed without hanging or test failures.

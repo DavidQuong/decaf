@@ -13,14 +13,15 @@ static FunctionPassManager* functionPassManager;
 void initializePassManagers(Module* module) {
     char id = 0;
     functionPassManager = new FunctionPassManager(module);
-
-    /* functionPassManager->add(createBasicAliasAnalysisPass()); */
+    
+    // Adds GVN support
+    functionPassManager->add(createBasicAliasAnalysisPass());
 
     // Convert stack allocation usage (alloca) into register usage (mem2reg)
-    /* functionPassManager->add(createPromoteMemoryToRegisterPass()); */
+    functionPassManager->add(createPromoteMemoryToRegisterPass());
     
     // Simple "peephole" optimization (instruction combining pass)
-    /* functionPassManager->add(createInstructionCombiningPass()); */
+    functionPassManager->add(createInstructionCombiningPass());
     
     // Re-associate expression
     functionPassManager->add(createReassociatePass());
@@ -29,7 +30,7 @@ void initializePassManagers(Module* module) {
     functionPassManager->add(createGVNPass());
     
     // Simplify the control flow graph (CFG simplification)
-    /* functionPassManager->add(createCFGSimplificationPass()); */
+    functionPassManager->add(createCFGSimplificationPass());
 }
 
 FunctionPassManager* getFunctionPassManager() {
